@@ -1,0 +1,102 @@
+// ============================================================
+// Hotel Slice
+// ============================================================
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../utils/api';
+
+export const fetchHotels = createAsyncThunk('hotels/fetch', async (params, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get('/hotels', { params });
+    return data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message);
+  }
+});
+
+export const fetchFeaturedHotels = createAsyncThunk('hotels/fetchFeatured', async (_, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get('/hotels/featured');
+    return data.hotels;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message);
+  }
+});
+
+export const fetchHotelDetail = createAsyncThunk('hotels/fetchDetail', async (id, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get(`/hotels/${id}`);
+    return data.hotel;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message);
+  }
+});
+
+export const fetchDestinations = createAsyncThunk('hotels/destinations', async (_, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get('/hotels/destinations');
+    return data.destinations;
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.message);
+  }
+});
+
+const hotelSlice = createSlice({
+  name: 'hotels',
+  initialState: {
+    list: [],
+    featured: [],
+    destinations: [],
+    currentHotel: null,
+    total: 0,
+    pages: 1,
+    currentPage: 1,
+    loading: false,
+    detailLoading: false,
+    error: null,
+    filters: {
+      city: '',
+      checkIn: '',
+      checkOut: '',
+      guests: 1,
+      minPrice: '',
+      maxPrice: '',
+      starRating: '',
+      propertyType: '',
+      sortBy: 'rating',
+    },
+  },
+  reducers: {
+    setFilters: (state, action) => {
+      state.filters = { ...state.filters, ...action.payload };
+    },
+    clearFilters: (state) => {
+      state.filters = { city: '', checkIn: '', checkOut: '', guests: 1, minPrice: '', maxPrice: '', starRating: '', propertyType: '', sortBy: 'rating' };
+    },
+    clearCurrentHotel: (state) => {
+      state.currentHotel = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchHotels.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchHotels.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload.hotels;
+        state.total = action.payload.total;
+        state.pages = action.payload.pages;
+        state.currentPage = action.payload.currentPage;
+      })
+      .addCase(fetchHotels.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
+      .addCase(fetchFeaturedHotels.fulfilled, (state, action) => { state.featured = action.payload; })
+      .addCase(fetchHotelDetail.pending, (state) => { state.detailLoading = true; })
+      .addCase(fetchHotelDetail.fulfilled, (state, action) => { state.detailLoading = false; state.currentHotel = action.payload; })
+      .addCase(fetchHotelDetail.rejected, (state, action) => { state.detailLoading = false; state.error = action.payload; })
+      .addCase(fetchDestinations.fulfilled, (state, action) => { state.destinations = action.payload; });
+  },
+});
+
+export const { setFilters, clearFilters, clearCurrentHotel } = hotelSlice.actions;
+export const selectHotels = (state) => state.hotels;
+export const selectCurrentHotel = (state) => state.hotels.currentHotel;
+export const selectFeaturedHotels = (state) => state.hotels.featured;
+export default hotelSlice.reducer;
