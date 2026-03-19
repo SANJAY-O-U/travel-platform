@@ -195,7 +195,7 @@ export default function Navbar() {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <Link to="/login" className="btn-ghost text-sm py-2 px-4">Sign In</Link>
+                <Link to="/login" className="btn-ghost text-sm py-2 px-4" >Sign In</Link>
                 <Link to="/register" className="btn-primary text-sm py-2 px-4">Get Started</Link>
               </div>
             )}

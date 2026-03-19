@@ -1,37 +1,32 @@
-// ============================================================
-// App.jsx — Root Component with Router & Auth Guard
-// ============================================================
+// client/src/App.jsx
 import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster }        from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import { AnimatePresence } from 'framer-motion';
+import { fetchCurrentUser, selectIsAuthenticated, selectIsAdmin } from './store/slices/authSlice';
 
-import { fetchCurrentUser } from './store/slices/authSlice';
-import { selectIsAuthenticated, selectIsAdmin } from './store/slices/authSlice';
-
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
-import PageLoader from './components/common/PageLoader';
+import Navbar      from './components/common/Navbar';
+import Footer      from './components/common/Footer';
 import ScrollToTop from './components/common/ScrollToTop';
 
-// ─── Lazy-loaded Pages ────────────────────────────────────────
-const HomePage        = lazy(() => import('./pages/HomePage'));
-const HotelsPage      = lazy(() => import('./pages/HotelsPage'));
-const HotelDetailPage = lazy(() => import('./pages/HotelDetailPage'));
-const FlightsPage     = lazy(() => import('./pages/FlightsPage'));
-const PackagesPage    = lazy(() => import('./pages/PackagesPage'));
-const PackageDetailPage = lazy(() => import('./pages/PackageDetailPage'));
-const BookingPage     = lazy(() => import('./pages/BookingPage'));
+// Lazy pages
+const HomePage           = lazy(() => import('./pages/HomePage'));
+const HotelsPage         = lazy(() => import('./pages/HotelsPage'));
+const HotelDetailPage    = lazy(() => import('./pages/HotelDetailPage'));
+const FlightsPage        = lazy(() => import('./pages/FlightsPage'));
+const PackagesPage       = lazy(() => import('./pages/PackagesPage'));
+const PackageDetailPage  = lazy(() => import('./pages/PackageDetailPage'));
+const BookingPage        = lazy(() => import('./pages/BookingPage'));
 const BookingConfirmPage = lazy(() => import('./pages/BookingConfirmPage'));
-const DashboardPage   = lazy(() => import('./pages/DashboardPage'));
-const AdminDashboard  = lazy(() => import('./pages/AdminDashboard'));
-const LoginPage       = lazy(() => import('./pages/LoginPage'));
-const RegisterPage    = lazy(() => import('./pages/RegisterPage'));
-const ContactPage     = lazy(() => import('./pages/ContactPage'));
-const NotFoundPage    = lazy(() => import('./pages/NotFoundPage'));
+const DashboardPage      = lazy(() => import('./pages/DashboardPage'));
+const AdminDashboard     = lazy(() => import('./pages/AdminDashboard'));
+const LoginPage          = lazy(() => import('./pages/LoginPage'));
+const RegisterPage       = lazy(() => import('./pages/RegisterPage'));
+const ContactPage        = lazy(() => import('./pages/ContactPage'));
+const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
+const GoogleAuthSuccess  = lazy(() => import('./pages/GoogleAuthSuccess'));
 
-// ─── Route Guards ─────────────────────────────────────────────
+// ── Route Guards ──────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -39,9 +34,9 @@ const ProtectedRoute = ({ children }) => {
 
 const AdminRoute = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const isAdmin = useSelector(selectIsAdmin);
+  const isAdmin         = useSelector(selectIsAdmin);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin)         return <Navigate to="/"     replace />;
   return children;
 };
 
@@ -50,24 +45,22 @@ const GuestRoute = ({ children }) => {
   return !isAuthenticated ? children : <Navigate to="/" replace />;
 };
 
-// ─── Layout Wrapper ───────────────────────────────────────────
+// ── Layouts ───────────────────────────────────────────────────
 const Layout = ({ children, noFooter = false }) => (
   <div className="min-h-screen flex flex-col bg-dark-bg">
     <Navbar />
-    <main className="flex-1">{children}</main>
+    <main className="flex-1 pt-0">{children}</main>
     {!noFooter && <Footer />}
   </div>
 );
 
 const AdminLayout = ({ children }) => (
-  <div className="min-h-screen bg-dark-bg">
-    {children}
-  </div>
+  <div className="min-h-screen bg-dark-bg">{children}</div>
 );
 
-// ─── Suspense Fallback ────────────────────────────────────────
-const SuspenseFallback = () => (
-  <div className="min-h-screen flex-center bg-dark-bg">
+// ── Loading Fallback ──────────────────────────────────────────
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-dark-bg">
     <div className="flex flex-col items-center gap-4">
       <div className="spinner" />
       <p className="text-slate-400 text-sm">Loading...</p>
@@ -75,79 +68,110 @@ const SuspenseFallback = () => (
   </div>
 );
 
-// ─── Main App ─────────────────────────────────────────────────
+// ── App ───────────────────────────────────────────────────────
 export default function App() {
   const dispatch = useDispatch();
-  const token = localStorage.getItem('token');
+  const token    = localStorage.getItem('token');
 
-  // Rehydrate user on app load
   useEffect(() => {
-    if (token) dispatch(fetchCurrentUser());
-  }, [dispatch, token]);
+    if (token) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch]);
 
   return (
     <BrowserRouter>
       <ScrollToTop />
+
       <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#1e293b',
-            color: '#e2e8f0',
-            border: '1px solid #334155',
+            background:   '#1e293b',
+            color:        '#e2e8f0',
+            border:       '1px solid #334155',
             borderRadius: '12px',
-            fontSize: '14px',
+            fontSize:     '14px',
           },
-          success: {
-            iconTheme: { primary: '#0ea5e9', secondary: '#1e293b' },
-          },
-          error: {
-            iconTheme: { primary: '#ef4444', secondary: '#1e293b' },
-          },
+          success: { iconTheme: { primary: '#0ea5e9', secondary: '#1e293b' } },
+          error:   { iconTheme: { primary: '#ef4444', secondary: '#1e293b' } },
         }}
       />
 
-      <Suspense fallback={<SuspenseFallback />}>
-        <AnimatePresence mode="wait">
-          <Routes>
-            {/* ── Public Routes ─────────────────────────── */}
-            <Route path="/" element={<Layout><HomePage /></Layout>} />
-            <Route path="/hotels" element={<Layout><HotelsPage /></Layout>} />
-            <Route path="/hotels/:id" element={<Layout><HotelDetailPage /></Layout>} />
-            <Route path="/flights" element={<Layout><FlightsPage /></Layout>} />
-            <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
-            <Route path="/packages/:id" element={<Layout><PackageDetailPage /></Layout>} />
-            <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          {/* ── Public ───────────────────────────────── */}
+          <Route path="/" element={<Layout><HomePage /></Layout>} />
+          <Route path="/hotels" element={<Layout><HotelsPage /></Layout>} />
+          <Route path="/hotels/:id" element={<Layout><HotelDetailPage /></Layout>} />
+          <Route path="/flights" element={<Layout><FlightsPage /></Layout>} />
+          <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
+          <Route path="/packages/:id" element={<Layout><PackageDetailPage /></Layout>} />
+          <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
 
-            {/* ── Auth Routes ───────────────────────────── */}
-            <Route path="/login" element={
-              <GuestRoute><Layout noFooter><LoginPage /></Layout></GuestRoute>
-            } />
-            <Route path="/register" element={
-              <GuestRoute><Layout noFooter><RegisterPage /></Layout></GuestRoute>
-            } />
+          {/* ── Auth ─────────────────────────────────── */}
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Layout noFooter>
+                  <LoginPage />
+                </Layout>
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <Layout noFooter>
+                  <RegisterPage />
+                </Layout>
+              </GuestRoute>
+            }
+          />
+          <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
-            {/* ── Protected Routes ──────────────────────── */}
-            <Route path="/booking/:type/:id" element={
-              <ProtectedRoute><Layout><BookingPage /></Layout></ProtectedRoute>
-            } />
-            <Route path="/booking/confirm/:bookingId" element={
-              <ProtectedRoute><Layout><BookingConfirmPage /></Layout></ProtectedRoute>
-            } />
-            <Route path="/dashboard/*" element={
-              <ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>
-            } />
+          {/* ── Protected ────────────────────────────── */}
+          <Route
+            path="/booking/:type/:id"
+            element={
+              <ProtectedRoute>
+                <Layout><BookingPage /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/booking/confirm/:bookingId"
+            element={
+              <ProtectedRoute>
+                <Layout><BookingConfirmPage /></Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/*"
+            element={
+              <ProtectedRoute>
+                <Layout><DashboardPage /></Layout>
+              </ProtectedRoute>
+            }
+          />
 
-            {/* ── Admin Routes ──────────────────────────── */}
-            <Route path="/admin/*" element={
-              <AdminRoute><AdminLayout><AdminDashboard /></AdminLayout></AdminRoute>
-            } />
+          {/* ── Admin ────────────────────────────────── */}
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminLayout><AdminDashboard /></AdminLayout>
+              </AdminRoute>
+            }
+          />
 
-            {/* ── 404 ───────────────────────────────────── */}
-            <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
-          </Routes>
-        </AnimatePresence>
+          {/* ── 404 ──────────────────────────────────── */}
+          <Route path="*" element={<Layout><NotFoundPage /></Layout>} />
+        </Routes>
       </Suspense>
     </BrowserRouter>
   );
