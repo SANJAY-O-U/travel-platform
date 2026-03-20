@@ -9,7 +9,13 @@ const asyncHandler = require('express-async-handler');
 
 // ─── @POST /api/bookings ─────────────────────────────────────
 // Create a new booking
-const createBooking = asyncHandler(async (req, res) => {
+
+
+  // Create booking
+  // server/controllers/bookingController.js
+// Replace createBooking with this version
+
+const createBooking = asyncHandler(async function(req, res) {
   const {
     bookingType,
     hotelId,
@@ -25,11 +31,16 @@ const createBooking = asyncHandler(async (req, res) => {
     addOns,
   } = req.body;
 
-  // Validate booking type and corresponding resource
+  if (!bookingType) {
+    res.status(400);
+    throw new Error('Booking type is required');
+  }
+
+  // Validate hotel booking
   if (bookingType === 'hotel') {
-    if (!hotelId || !checkIn || !checkOut) {
+    if (!hotelId) {
       res.status(400);
-      throw new Error('Hotel ID, check-in and check-out dates are required for hotel bookings');
+      throw new Error('Hotel ID is required');
     }
 
     const hotel = await Hotel.findById(hotelId);
@@ -38,69 +49,95 @@ const createBooking = asyncHandler(async (req, res) => {
       throw new Error('Hotel not found');
     }
 
-    // Check for overlapping bookings
-    const conflict = await Booking.findOne({
-      hotel: hotelId,
-      status: { $in: ['confirmed', 'checked_in'] },
-      'room.roomType': room?.roomType,
-      $or: [{ checkIn: { $lt: new Date(checkOut) }, checkOut: { $gt: new Date(checkIn) } }],
-    });
-
-    if (conflict) {
-      res.status(409);
-      throw new Error('Selected room is not available for the chosen dates');
+    if (checkIn && checkOut) {
+      const checkInDate  = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      if (checkInDate >= checkOutDate) {
+        res.status(400);
+        throw new Error('Check-out must be after check-in');
+      }
     }
   }
 
-  // Create booking
-  const booking = await Booking.create({
+  if (bookingType === 'flight' && !flightId) {
+    res.status(400);
+    throw new Error('Flight ID is required');
+  }
+
+  if (bookingType === 'package' && !packageId) {
+    res.status(400);
+    throw new Error('Package ID is required');
+  }
+
+  // Build booking object
+  const bookingData = {
     bookingType,
-    user: req.user._id,
-    hotel: hotelId,
-    flight: flightId,
-    package: packageId,
-    room,
-    checkIn: checkIn ? new Date(checkIn) : undefined,
-    checkOut: checkOut ? new Date(checkOut) : undefined,
-    guests: guests || { adults: 1 },
+    user:    req.user._id,
+    guests:  guests || { adults: 1, children: 0, infants: 0 },
     primaryGuest: primaryGuest || {
-      name: req.user.name,
+      name:  req.user.name,
       email: req.user.email,
       phone: req.user.phone || '',
     },
-    pricing,
-    specialRequests,
-    addOns,
-    status: 'confirmed', // Auto-confirm for demo (in prod: pending until payment)
-    'payment.status': 'paid',
-    'payment.paidAt': new Date(),
-    'payment.method': 'stripe',
-  });
+    pricing: {
+      basePrice:   pricing?.basePrice   || 0,
+      taxes:       pricing?.taxes       || 0,
+      fees:        pricing?.fees        || 0,
+      discount:    pricing?.discount    || 0,
+      totalAmount: pricing?.totalAmount || 0,
+      currency:    pricing?.currency    || 'USD',
+    },
+    specialRequests: specialRequests || '',
+    addOns:          addOns          || [],
+    status:          'confirmed',
+    payment: {
+      method: 'stripe',
+      status: 'paid',
+      paidAt: new Date(),
+    },
+  };
 
-  // Update hotel booking stats
+  if (bookingType === 'hotel') {
+    bookingData.hotel    = hotelId;
+    bookingData.checkIn  = checkIn  ? new Date(checkIn)  : undefined;
+    bookingData.checkOut = checkOut ? new Date(checkOut) : undefined;
+    if (room) bookingData.room = room;
+  }
+
+  if (bookingType === 'flight')  bookingData.flight  = flightId;
+  if (bookingType === 'package') bookingData.package = packageId;
+
+  const booking = await Booking.create(bookingData);
+
+  // Update stats
   if (bookingType === 'hotel' && hotelId) {
     await Hotel.findByIdAndUpdate(hotelId, {
       $inc: {
         totalBookings: 1,
-        totalRevenue: pricing.totalAmount,
+        totalRevenue:  pricing?.totalAmount || 0,
       },
     });
   }
 
-  // Populate for response
-  const populatedBooking = await Booking.findById(booking._id)
-    .populate('hotel', 'name location coverImage contact')
-    .populate('flight', 'flightNumber airline origin destination')
+  if (bookingType === 'package' && packageId) {
+    const TravelPackage = require('../models/TravelPackage');
+    await TravelPackage.findByIdAndUpdate(packageId, {
+      $inc: { bookingCount: 1 },
+    });
+  }
+
+  const populated = await Booking.findById(booking._id)
+    .populate('hotel',   'name location coverImage contact')
+    .populate('flight',  'flightNumber airline origin destination departureTime')
     .populate('package', 'title destination duration coverImage')
-    .populate('user', 'name email');
+    .populate('user',    'name email');
 
   res.status(201).json({
     success: true,
     message: 'Booking confirmed successfully!',
-    booking: populatedBooking,
+    booking: populated,
   });
 });
-
 // ─── @GET /api/bookings/my ───────────────────────────────────
 // Get current user's bookings
 const getMyBookings = asyncHandler(async (req, res) => {

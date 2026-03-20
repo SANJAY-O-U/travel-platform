@@ -1,7 +1,7 @@
 // client/src/pages/LoginPage.jsx
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion }   from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Mail, Lock, Eye, EyeOff, Globe,
@@ -13,76 +13,150 @@ import {
   selectAuthLoading,
   selectAuthError,
   selectIsAuthenticated,
+  setUser,
 } from '../store/slices/authSlice';
+import api  from '../utils/api';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-
+  const dispatch        = useDispatch();
+  const navigate        = useNavigate();
+  const location        = useLocation();
   const loading         = useSelector(selectAuthLoading);
   const error           = useSelector(selectAuthError);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const [form,    setForm]    = useState({ email: '', password: '' });
-  const [showPwd, setShowPwd] = useState(false);
+  const [form,          setForm]          = useState({ email: '', password: '' });
+  const [showPwd,       setShowPwd]       = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate(from, { replace: true });
-    }
-  }, [isAuthenticated, navigate, from]);
+    if (isAuthenticated) navigate(from, { replace: true });
+  }, [isAuthenticated]);
 
-  // Clear errors when component unmounts
   useEffect(() => {
-    return () => { dispatch(clearError()); };
+    return () => dispatch(clearError());
   }, [dispatch]);
+
+  // ── Load Google Identity Services script ──────────────────
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.warn('VITE_GOOGLE_CLIENT_ID not set in client/.env');
+      return;
+    }
+
+    // Check if already loaded
+    if (window.google) {
+      initializeGoogle(clientId);
+      return;
+    }
+
+    const script    = document.createElement('script');
+    script.src      = 'https://accounts.google.com/gsi/client';
+    script.async    = true;
+    script.defer    = true;
+    script.onload   = () => initializeGoogle(clientId);
+    script.onerror  = () => console.error('Failed to load Google Sign-In script');
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.cancel();
+      }
+    };
+  }, []);
+
+  const initializeGoogle = (clientId) => {
+    if (!window.google?.accounts?.id) return;
+    window.google.accounts.id.initialize({
+      client_id:        clientId,
+      callback:         handleGoogleCredential,
+      auto_select:      false,
+      cancel_on_tap_outside: true,
+    });
+  };
+
+  // Handle Google One Tap credential
+  const handleGoogleCredential = async (response) => {
+    if (!response.credential) {
+      toast.error('Google sign-in failed. Please try again.');
+      return;
+    }
+    setGoogleLoading(true);
+    try {
+      // Decode JWT from Google
+      const parts   = response.credential.split('.');
+      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const { sub: googleId, email, name, picture } = payload;
+
+      const { data } = await api.post('/auth/google/token', {
+        googleData: { googleId, email, name, picture },
+      });
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user',  JSON.stringify(data.user));
+      dispatch(setUser(data.user));
+      toast.success('Welcome, ' + data.user.name + '! 🎉');
+      navigate(from, { replace: true });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Google sign-in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // Handle Google button click — opens Google popup
+  const handleGoogleClick = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      toast.error('Google Sign-In is not configured. Please use email/password.');
+      return;
+    }
+    if (!window.google?.accounts?.id) {
+      toast.error('Google Sign-In is loading. Please try again in a moment.');
+      return;
+    }
+    setGoogleLoading(true);
+    window.google.accounts.id.prompt((notification) => {
+      setGoogleLoading(false);
+      if (notification.isNotDisplayed()) {
+        // Fallback to redirect flow
+        window.location.href = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api') + '/auth/google';
+      }
+    });
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     if (error) dispatch(clearError());
   };
 
-  // ✅ Fixed: proper async submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!form.email.trim()) {
-      toast.error('Please enter your email address');
+    if (!form.email.trim() || !form.password) {
+      toast.error('Please fill in all fields');
       return;
     }
-
-    if (!form.password) {
-      toast.error('Please enter your password');
-      return;
-    }
-
-    try {
-      const result = await dispatch(
-        loginUser({ email: form.email.trim(), password: form.password })
-      );
-
-      if (loginUser.fulfilled.match(result)) {
-        // Success — useEffect will redirect
-        navigate(from, { replace: true });
-      }
-      // If rejected, error is shown via toast in slice
-    } catch (err) {
-      console.error('Login error:', err);
-      toast.error('Something went wrong. Please try again.');
+    const result = await dispatch(loginUser({
+      email:    form.email.trim(),
+      password: form.password,
+    }));
+    if (loginUser.fulfilled.match(result)) {
+      navigate(from, { replace: true });
     }
   };
 
-  // Fill demo credentials
   const fillDemo = (email, password) => {
     setForm({ email, password });
     dispatch(clearError());
-    toast.success('Credentials loaded — click Sign In!', { icon: '✓' });
+    toast.success('Credentials loaded!', { icon: '✓' });
   };
+
+  const hasGoogleConfig = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   return (
     <div className="min-h-screen flex">
@@ -91,7 +165,6 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
           {/* Logo */}
@@ -108,7 +181,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-white mb-1">Welcome back</h1>
           <p className="text-slate-400 mb-8">Sign in to continue your journey</p>
 
-          {/* Error Banner */}
+          {/* Error */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
@@ -116,45 +189,61 @@ export default function LoginPage() {
               className="mb-5 p-4 rounded-xl bg-red-500/10 border border-red-500/25 flex items-start gap-3"
             >
               <AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-red-400 text-sm font-medium">{error}</p>
-                {error.toLowerCase().includes('google') && (
-                  <p className="text-red-400/70 text-xs mt-1">
-                    This email was registered with Google. Use Google Sign In below.
-                  </p>
-                )}
-                {(error.toLowerCase().includes('no account') || error.toLowerCase().includes('not found')) && (
-                  <Link to="/register" className="text-ocean text-xs mt-1 hover:underline block">
-                    → Create an account instead
-                  </Link>
-                )}
-                {error.toLowerCase().includes('password') && (
-                  <button
-                    type="button"
-                    className="text-ocean text-xs mt-1 hover:underline block"
-                    onClick={() => toast('Password reset coming soon!')}
-                  >
-                    → Forgot your password?
-                  </button>
-                )}
-              </div>
+              <p className="text-red-400 text-sm">{error}</p>
             </motion.div>
           )}
 
-          {/* Form */}
+          {/* ── Google Sign In Button ────────────────────── */}
+          <button
+            type="button"
+            onClick={handleGoogleClick}
+            disabled={googleLoading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl
+                       bg-white text-gray-700 font-medium text-sm border border-gray-200
+                       hover:bg-gray-50 hover:shadow-md
+                       transition-all duration-200 mb-4
+                       disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {googleLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                <span>Connecting to Google...</span>
+              </>
+            ) : (
+              <>
+                {/* Google SVG Logo */}
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                <span>Continue with Google</span>
+              </>
+            )}
+          </button>
+
+          {/* Note if Google not configured */}
+          {!hasGoogleConfig && (
+            <p className="text-center text-xs text-slate-600 mb-4">
+              Add <code className="bg-dark-card px-1 rounded">VITE_GOOGLE_CLIENT_ID</code> to client/.env to enable Google Sign-In
+            </p>
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px bg-dark-border" />
+            <span className="text-slate-600 text-xs">or continue with email</span>
+            <div className="flex-1 h-px bg-dark-border" />
+          </div>
+
+          {/* Email/Password Form */}
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            {/* Email */}
             <div>
-              <label htmlFor="email" className="input-label">
-                Email address
-              </label>
+              <label className="input-label">Email address</label>
               <div className="relative">
-                <Mail
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
-                />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
-                  id="email"
                   name="email"
                   type="email"
                   value={form.email}
@@ -162,33 +251,26 @@ export default function LoginPage() {
                   placeholder="you@example.com"
                   autoComplete="email"
                   required
-                  className="input pl-10"
                   disabled={loading}
+                  className="input pl-10"
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label htmlFor="password" className="input-label mb-0">
-                  Password
-                </label>
+                <label className="input-label mb-0">Password</label>
                 <button
                   type="button"
-                  className="text-xs text-ocean hover:text-ocean/80 transition-colors"
+                  className="text-xs text-ocean hover:text-ocean/80"
                   onClick={() => toast('Password reset coming soon!')}
                 >
                   Forgot password?
                 </button>
               </div>
               <div className="relative">
-                <Lock
-                  size={16}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
-                />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
-                  id="password"
                   name="password"
                   type={showPwd ? 'text' : 'password'}
                   value={form.password}
@@ -196,13 +278,13 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
-                  className="input pl-10 pr-11"
                   disabled={loading}
+                  className="input pl-10 pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd(!showPwd)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                   tabIndex={-1}
                 >
                   {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -210,75 +292,50 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-3 text-base flex items-center justify-center gap-2
-                         disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full btn-primary py-3 text-base flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <>
-                  <div className="spinner w-5 h-5 border-2" />
-                  <span>Signing in...</span>
-                </>
+                <><div className="spinner w-5 h-5 border-2" /><span>Signing in...</span></>
               ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight size={16} />
-                </>
+                <><span>Sign In</span><ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
-          {/* Register Link */}
-          <p className="mt-6 text-center text-sm text-slate-400">
+          <p className="mt-5 text-center text-sm text-slate-400">
             Don&apos;t have an account?{' '}
-            <Link
-              to="/register"
-              className="text-ocean hover:text-ocean/80 font-medium transition-colors"
-            >
+            <Link to="/register" className="text-ocean font-medium hover:underline">
               Create one free
             </Link>
           </p>
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 rounded-xl bg-dark-card border border-dark-border">
-            <p className="text-slate-300 text-xs font-semibold mb-3 flex items-center gap-1.5">
-              🔑 Demo Credentials — Click to autofill
-            </p>
+            <p className="text-slate-300 text-xs font-semibold mb-3">🔑 Demo Credentials — Click to autofill</p>
             <div className="space-y-2">
               {[
-                {
-                  role:     'User',
-                  email:    'alice@example.com',
-                  password: 'Password@123',
-                  color:    'ocean',
-                },
-                {
-                  role:     'Admin',
-                  email:    'admin@travelplatform.com',
-                  password: 'Admin@123456',
-                  color:    'sand',
-                },
+                { role: 'User',  email: 'alice@example.com',        password: 'Password@123', color: 'text-ocean' },
+                { role: 'Admin', email: 'admin@travelplatform.com', password: 'Admin@123456', color: 'text-sand' },
               ].map(({ role, email, password, color }) => (
                 <button
                   key={role}
                   type="button"
                   onClick={() => fillDemo(email, password)}
                   disabled={loading}
-                  className="w-full text-left px-3 py-2.5 rounded-xl bg-dark-bg border border-dark-border
-                             hover:border-ocean/40 transition-all group disabled:opacity-50"
+                  className="w-full text-left px-3 py-2.5 rounded-xl bg-dark-bg border border-dark-border hover:border-ocean/40 transition-all group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className={`text-xs font-bold ${color === 'sand' ? 'text-sand' : 'text-ocean'}`}>
+                      <span className={`text-xs font-bold ${color}`}>
                         {role === 'Admin' ? '⚡' : '👤'} {role}
                       </span>
-                      <p className="text-slate-400 text-xs mt-0.5">{email}</p>
+                      <p className="text-slate-400 text-xs">{email}</p>
                       <p className="text-slate-600 text-xs">{password}</p>
                     </div>
-                    <span className="text-slate-600 text-xs group-hover:text-ocean transition-colors shrink-0">
+                    <span className="text-slate-600 text-xs group-hover:text-ocean shrink-0">
                       Click to fill →
                     </span>
                   </div>
@@ -293,7 +350,7 @@ export default function LoginPage() {
       <div className="hidden lg:block flex-1 relative overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200&q=80"
-          alt="Login visual"
+          alt=""
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-dark-bg via-dark-bg/50 to-transparent" />

@@ -185,78 +185,68 @@ export default function BookingPage() {
   };
 
   // ✅ Fixed: handleConfirm — no next() call, proper async/await
-  const handleConfirm = async () => {
-    if (submitting) return;
+// client/src/pages/BookingPage.jsx
+// Replace ONLY the handleConfirm function and the button
 
-    setSubmitting(true);
-    setFormError('');
+const handleConfirm = async () => {
+  if (submitting) return;
+  setSubmitting(true);
+  setFormError('');
 
-    try {
-      const bookingData = {
-        bookingType: type,
+  try {
+    const bookingPayload = {
+      bookingType: type,
+      guests:      guestCount,
+      primaryGuest: {
+        name:        guestForm.name.trim(),
+        email:       guestForm.email.trim(),
+        phone:       guestForm.phone.trim(),
+        nationality: guestForm.nationality || '',
+      },
+      pricing: {
+        basePrice:   basePrice,
+        taxes:       taxes,
+        fees:        fees,
+        discount:    0,
+        totalAmount: totalAmount,
+        currency:    'USD',
+      },
+      specialRequests: specialRequests || '',
+      addOns:          selectedAddOns   || [],
+    };
 
-        // IDs
-        ...(type === 'hotel'   && { hotelId:   id }),
-        ...(type === 'flight'  && { flightId:  id }),
-        ...(type === 'package' && { packageId: id }),
-
-        // Room (hotel only)
-        ...(type === 'hotel' && room && { room }),
-
-        // Dates (hotel only)
-        ...(type === 'hotel' && checkIn  && { checkIn }),
-        ...(type === 'hotel' && checkOut && { checkOut }),
-
-        // Guests
-        guests: guestCount,
-
-        // Primary guest
-        primaryGuest: {
-          name:        guestForm.name.trim(),
-          email:       guestForm.email.trim(),
-          phone:       guestForm.phone.trim(),
-          nationality: guestForm.nationality.trim(),
-        },
-
-        // Pricing
-        pricing: {
-          basePrice,
-          taxes,
-          fees,
-          discount:    0,
-          totalAmount,
-          currency:    'USD',
-        },
-
-        specialRequests,
-        addOns: selectedAddOns,
-      };
-
-      console.log('Creating booking:', bookingData);
-
-      const result = await dispatch(createBooking(bookingData));
-
-      if (createBooking.fulfilled.match(result)) {
-        const bookingId = result.payload?.booking?._id;
-        if (bookingId) {
-          navigate(`/booking/confirm/${bookingId}`);
-        } else {
-          toast.error('Booking created but could not get confirmation ID');
-        }
-      } else {
-        const errorMsg = result.payload || 'Booking failed. Please try again.';
-        setFormError(errorMsg);
-        toast.error(errorMsg);
-      }
-    } catch (err) {
-      console.error('Booking error:', err);
-      const msg = err?.message || 'Something went wrong. Please try again.';
-      setFormError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
+    // Add type-specific fields
+    if (type === 'hotel') {
+      bookingPayload.hotelId  = id;
+      bookingPayload.checkIn  = checkIn;
+      bookingPayload.checkOut = checkOut;
+      if (room) bookingPayload.room = room;
+    } else if (type === 'flight') {
+      bookingPayload.flightId = id;
+    } else if (type === 'package') {
+      bookingPayload.packageId = id;
     }
-  };
+
+    console.log('Submitting booking:', bookingPayload);
+
+    // ✅ Call API directly — do NOT use dispatch which may trigger middleware issues
+    const { data } = await api.post('/bookings', bookingPayload);
+
+    if (data.success && data.booking?._id) {
+      toast.success('Booking confirmed! 🎉');
+      navigate('/booking/confirm/' + data.booking._id);
+    } else {
+      throw new Error('Booking created but no ID returned');
+    }
+  } catch (err) {
+    console.error('Booking error:', err);
+    const msg = err.response?.data?.message || err.message || 'Booking failed. Please try again.';
+    setFormError(msg);
+    toast.error(msg);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   // Loading state
   if (!resource) {
