@@ -8,7 +8,11 @@ import { fetchCurrentUser, selectIsAuthenticated, selectIsAdmin } from './store/
 import Navbar      from './components/common/Navbar';
 import Footer      from './components/common/Footer';
 import ScrollToTop from './components/common/ScrollToTop';
+import AboutPage from './pages/AboutPage';
 
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import AuthCallback from './pages/AuthCallbackPage';
 // Lazy pages
 const HomePage           = lazy(() => import('./pages/HomePage'));
 const HotelsPage         = lazy(() => import('./pages/HotelsPage'));
@@ -25,7 +29,7 @@ const RegisterPage       = lazy(() => import('./pages/RegisterPage'));
 const ContactPage        = lazy(() => import('./pages/ContactPage'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const GoogleAuthSuccess  = lazy(() => import('./pages/GoogleAuthSuccess'));
-
+const AuthCallbackPage   = lazy(() => import('./pages/AuthCallbackPage'));
 // ── Route Guards ──────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -109,29 +113,33 @@ export default function App() {
           <Route path="/packages" element={<Layout><PackagesPage /></Layout>} />
           <Route path="/packages/:id" element={<Layout><PackageDetailPage /></Layout>} />
           <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
+          <Route path="/about"                element={<Layout><AboutPage /></Layout>} />
 
-          {/* ── Auth ─────────────────────────────────── */}
-          <Route
-            path="/login"
-            element={
-              <GuestRoute>
-                <Layout noFooter>
-                  <LoginPage />
-                </Layout>
-              </GuestRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <GuestRoute>
-                <Layout noFooter>
-                  <RegisterPage />
-                </Layout>
-              </GuestRoute>
-            }
-          />
-          <Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
+          // ── Auth ───────────────────────────────────
+<Route
+  path="/login"
+  element={
+    <GuestRoute>
+      <Layout noFooter>
+        <LoginPage />
+      </Layout>
+    </GuestRoute>
+  }
+/>
+<Route
+  path="/register"
+  element={
+    <GuestRoute>
+      <Layout noFooter>
+        <RegisterPage />
+      </Layout>
+    </GuestRoute>
+  }
+/>
+<Route path="/forgot-password"      element={<Layout noFooter><ForgotPasswordPage /></Layout>} />
+<Route path="/reset-password/:token" element={<Layout noFooter><ResetPasswordPage /></Layout>} />
+<Route path="/auth/callback"        element={<AuthCallbackPage />} />
+<Route path="/auth/google/success" element={<GoogleAuthSuccess />} />
 
           {/* ── Protected ────────────────────────────── */}
           <Route

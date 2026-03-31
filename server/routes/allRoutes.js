@@ -1,3 +1,4 @@
+const authRouter = require('./authRoutes');
 // ============================================================
 // Flight Routes
 // ============================================================
@@ -160,6 +161,7 @@ recommendationRouter.get('/', optionalAuth, async (req, res) => {
 });
 
 module.exports = {
+  authRouter,
   flightRouter,
   bookingRouter,
   packageRouter,

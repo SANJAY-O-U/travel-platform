@@ -323,7 +323,99 @@ const googleTokenLogin = asyncHandler(async function(req, res) {
 
   sendToken(user, 200, res, 'Welcome, ' + user.name + '!');
 });
+// server/controllers/authController.js — Add forgotPassword & resetPassword
+const nodemailer = require('nodemailer');
+const crypto     = require('crypto');
 
+// ── @POST /api/auth/forgot-password ───────────────────────────
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) { res.status(400); throw new Error('Please provide email'); }
+
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    // Return 200 even if not found (security: don't leak emails)
+    return res.status(200).json({
+      success: true,
+      message: 'If that email exists, a reset link has been sent.',
+    });
+  }
+
+  const resetToken = user.generatePasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+  // Send email
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,   // App password, not real password
+    },
+  });
+
+  await transporter.sendMail({
+    from:    `"TravelPlatform" <${process.env.EMAIL_USER}>`,
+    to:      user.email,
+    subject: 'Password Reset Request',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#0ea5e9">Reset your password</h2>
+        <p>Hi ${user.name},</p>
+        <p>Click the link below to reset your password. This link expires in <strong>15 minutes</strong>.</p>
+        <a href="${resetUrl}"
+           style="display:inline-block;background:#0ea5e9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;margin:16px 0">
+          Reset Password
+        </a>
+        <p style="color:#888;font-size:12px">If you didn't request this, ignore this email.</p>
+      </div>
+    `,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Password reset email sent. Check your inbox.',
+  });
+});
+
+// ── @PUT /api/auth/reset-password/:token ──────────────────────
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token }       = req.params;
+  const { newPassword } = req.body;
+
+  if (!newPassword || newPassword.length < 8) {
+    res.status(400);
+    throw new Error('Password must be at least 8 characters');
+  }
+
+  // Hash the incoming token to match stored hash
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    resetPasswordToken:  hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    res.status(400);
+    throw new Error('Invalid or expired reset token. Please request a new one.');
+  }
+
+  user.password            = newPassword;
+  user.resetPasswordToken  = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  sendTokenResponse(user, 200, res, 'Password reset successful! You are now logged in.');
+});
+
+// Add to exports:
+module.exports = {
+  register, login, getMe, updateProfile,
+  changePassword, toggleWishlist, adminLogin,
+  forgotPassword, resetPassword,              // ← add
+};
 // ── EXPORTS ───────────────────────────────────────────────────
 module.exports = {
   register,
@@ -334,4 +426,5 @@ module.exports = {
   changePassword,
   toggleWishlist,
   googleTokenLogin,
+  forgotPassword, resetPassword, 
 };

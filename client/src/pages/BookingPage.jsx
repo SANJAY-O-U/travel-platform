@@ -67,7 +67,16 @@ export default function BookingPage() {
   const navigate     = useNavigate();
   const dispatch     = useDispatch();
   const user         = useSelector(selectUser);
-
+  const handleBookFlight = (flight) => {
+  if (!isAuth) { navigate('/login'); return; }
+  navigate(`/booking/flight/${flight._id}`, {
+    state: {
+      bookingType: 'flight',
+      flight,
+      resourceId: flight._id,
+    },
+  });
+};
   // Get data passed from previous page
   const state = location.state || {};
   const {
@@ -183,66 +192,45 @@ export default function BookingPage() {
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  // ✅ Fixed: handleConfirm — no next() call, proper async/await
-// client/src/pages/BookingPage.jsx
-// Replace ONLY the handleConfirm function and the button
+// client/src/pages/BookingPage.jsx — Fix handleConfirm
+// Replace the entire handleConfirm function:
 
 const handleConfirm = async () => {
   if (submitting) return;
   setSubmitting(true);
-  setFormError('');
 
   try {
-    const bookingPayload = {
-      bookingType: type,
-      guests:      guestCount,
-      primaryGuest: {
-        name:        guestForm.name.trim(),
-        email:       guestForm.email.trim(),
-        phone:       guestForm.phone.trim(),
-        nationality: guestForm.nationality || '',
-      },
-      pricing: {
-        basePrice:   basePrice,
-        taxes:       taxes,
-        fees:        fees,
-        discount:    0,
-        totalAmount: totalAmount,
-        currency:    'USD',
-      },
-      specialRequests: specialRequests || '',
-      addOns:          selectedAddOns   || [],
-    };
+    const result = await dispatch(createBooking({
+      bookingType,
+      hotelId:        bookingType === 'hotel'   ? resourceId : undefined,
+      flightId:       bookingType === 'flight'  ? resourceId : undefined,
+      packageId:      bookingType === 'package' ? resourceId : undefined,
+      room,
+      checkIn,
+      checkOut,
+      guests:         guestCount,
+      primaryGuest:   guestInfo,
+      pricing,
+      specialRequests,
+      addOns,
+    }));
 
-    // Add type-specific fields
-    if (type === 'hotel') {
-      bookingPayload.hotelId  = id;
-      bookingPayload.checkIn  = checkIn;
-      bookingPayload.checkOut = checkOut;
-      if (room) bookingPayload.room = room;
-    } else if (type === 'flight') {
-      bookingPayload.flightId = id;
-    } else if (type === 'package') {
-      bookingPayload.packageId = id;
-    }
-
-    console.log('Submitting booking:', bookingPayload);
-
-    // ✅ Call API directly — do NOT use dispatch which may trigger middleware issues
-    const { data } = await api.post('/bookings', bookingPayload);
-
-    if (data.success && data.booking?._id) {
-      toast.success('Booking confirmed! 🎉');
-      navigate('/booking/confirm/' + data.booking._id);
+    // ✅ Check thunk result BEFORE navigating
+    if (createBooking.fulfilled.match(result)) {
+      const bookingId = result.payload?.booking?._id;
+      if (bookingId) {
+        navigate(`/booking/confirm/${bookingId}`);
+      } else {
+        toast.error('Booking created but ID missing — check your bookings page.');
+        navigate('/dashboard/bookings');
+      }
     } else {
-      throw new Error('Booking created but no ID returned');
+      // rejected
+      toast.error(result.payload || 'Booking failed');
     }
   } catch (err) {
+    toast.error('Something went wrong. Please try again.');
     console.error('Booking error:', err);
-    const msg = err.response?.data?.message || err.message || 'Booking failed. Please try again.';
-    setFormError(msg);
-    toast.error(msg);
   } finally {
     setSubmitting(false);
   }

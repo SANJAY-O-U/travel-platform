@@ -116,7 +116,16 @@ export default function FlightsPage() {
   const handleBook = (flight) => {
     navigate(`/booking/flight/${flight._id}`, { state: { flight, passengers: params.passengers } });
   };
-
+  const handleBookFlight = (flight) => {
+  if (!isAuth) { navigate('/login'); return; }
+  navigate(`/booking/flight/${flight._id}`, {
+    state: {
+      bookingType: 'flight',
+      flight,
+      resourceId: flight._id,
+    },
+  });
+};
   const handleRouteClick = (route) => {
     const updated = { ...params, from: route._id.from, to: route._id.to };
     setParams(updated);

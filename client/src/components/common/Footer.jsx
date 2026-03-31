@@ -4,24 +4,27 @@
 import { Link } from 'react-router-dom';
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
+// client/src/components/common/Footer.jsx
+// Replace FOOTER_LINKS with correct routes:
+
 const FOOTER_LINKS = {
   Explore: [
-    { label: 'Hotels',      to: '/hotels' },
-    { label: 'Flights',     to: '/flights' },
-    { label: 'Packages',    to: '/packages' },
-    { label: 'Destinations', to: '/hotels' },
+    { label: 'Hotels',       to: '/hotels' },
+    { label: 'Flights',      to: '/flights' },
+    { label: 'Packages',     to: '/packages' },
+    { label: 'Destinations', to: '/hotels?view=destinations' },
   ],
   Company: [
-    { label: 'About Us',    to: '/contact' },
-    { label: 'Contact',     to: '/contact' },
-    { label: 'Careers',     to: '#' },
-    { label: 'Press',       to: '#' },
+    { label: 'About Us',  to: '/about' },    // ✅ Fixed — separate page
+    { label: 'Contact',   to: '/contact' },
+    { label: 'Careers',   to: '/careers' },
+    { label: 'Press',     to: '/press' },
   ],
   Support: [
-    { label: 'Help Center', to: '#' },
-    { label: 'Cancellation Policy', to: '#' },
-    { label: 'Privacy Policy', to: '#' },
-    { label: 'Terms of Service', to: '#' },
+    { label: 'Help Center',          to: '/help' },
+    { label: 'Cancellation Policy',  to: '/cancellation-policy' },
+    { label: 'Privacy Policy',       to: '/privacy' },
+    { label: 'Terms of Service',     to: '/terms' },
   ],
 };
 

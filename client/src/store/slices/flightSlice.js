@@ -12,15 +12,32 @@ export const searchFlights = createAsyncThunk('flights/search', async (params, {
     return rejectWithValue(err.response?.data?.message);
   }
 });
+// client/src/store/slices/flightSlice.js — add these thunks
+export const fetchFlights = createAsyncThunk('flights/search', async (params, { rejectWithValue }) => {
+  try {
+    const { data } = await api.get('/flights', { params });
+    return data;
+  } catch (err) { return rejectWithValue(err.response?.data?.message); }
+});
 
 export const fetchPopularRoutes = createAsyncThunk('flights/popularRoutes', async (_, { rejectWithValue }) => {
   try {
     const { data } = await api.get('/flights/popular-routes');
     return data.routes;
-  } catch (err) {
-    return rejectWithValue(err.response?.data?.message);
-  }
+  } catch (err) { return rejectWithValue(err.response?.data?.message); }
 });
+
+// In slice initialState add: popularRoutes: []
+// In extraReducers add:
+// .addCase(fetchFlights.fulfilled, (state, action) => {
+//   state.loading = false;
+//   state.flights = action.payload.flights;
+//   state.total   = action.payload.total;
+//   state.pages   = action.payload.pages;
+// })
+// .addCase(fetchPopularRoutes.fulfilled, (state, action) => {
+//   state.popularRoutes = action.payload;
+// })
 
 const flightSlice = createSlice({
   name: 'flights',

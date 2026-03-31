@@ -36,13 +36,25 @@ const getFeaturedPackages = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, packages });
 });
 
-const getPackage = asyncHandler(async (req, res) => {
-  const pkg = await TravelPackage.findOne({ slug: req.params.id, isActive: true })
-    || await TravelPackage.findById(req.params.id);
+// server/controllers/packageController.js — getPackage
+// Support both slug and _id lookup:
 
-  if (!pkg) { res.status(404); throw new Error('Package not found'); }
-  pkg.viewCount += 1;
-  await pkg.save({ validateBeforeSave: false });
+const getPackage = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Try ObjectId first, then slug
+  let pkg;
+  if (id.match(/^[0-9a-fA-F]{24}$/)) {
+    pkg = await TravelPackage.findById(id);
+  }
+  if (!pkg) {
+    pkg = await TravelPackage.findOne({ slug: id });
+  }
+
+  if (!pkg || !pkg.isActive) {
+    res.status(404);
+    throw new Error('Package not found');
+  }
 
   res.status(200).json({ success: true, package: pkg });
 });

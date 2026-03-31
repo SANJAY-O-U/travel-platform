@@ -17,8 +17,16 @@ const userRoutes           = require('./routes/userRoutes');
 const reviewRoutes         = require('./routes/reviewRoutes');
 const adminRoutes          = require('./routes/adminRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
+// server/server.js (or app.js)
+const passport = require('./config/passport'); // Import your new config
+
 
 const app = express();
+// ... other middleware (cors, express.json)
+
+// Initialize Passport
+app.use(passport.initialize());
+
 
 // ── Security ───────────────────────────────────────────────────
 app.use(

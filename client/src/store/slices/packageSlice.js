@@ -19,14 +19,22 @@ export const fetchFeaturedPackages = createAsyncThunk('packages/featured', async
   }
 });
 
-export const fetchPackageDetail = createAsyncThunk('packages/detail', async (id, { rejectWithValue }) => {
+// client/src/store/slices/packageSlice.js — add fetchPackageDetail thunk
+export const fetchPackageDetail = createAsyncThunk('packages/fetchDetail', async (id, { rejectWithValue }) => {
   try {
     const { data } = await api.get(`/packages/${id}`);
     return data.package;
-  } catch (err) {
-    return rejectWithValue(err.response?.data?.message);
-  }
+  } catch (err) { return rejectWithValue(err.response?.data?.message); }
 });
+
+// In initialState add: currentPackage: null, detailLoading: false
+// In extraReducers add:
+// .addCase(fetchPackageDetail.pending,   (state) => { state.detailLoading = true; })
+// .addCase(fetchPackageDetail.fulfilled, (state, action) => {
+//   state.detailLoading  = false;
+//   state.currentPackage = action.payload;
+// })
+// .addCase(fetchPackageDetail.rejected,  (state) => { state.detailLoading = false; })
 
 const packageSlice = createSlice({
   name: 'packages',

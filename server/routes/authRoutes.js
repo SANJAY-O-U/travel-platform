@@ -18,8 +18,27 @@ const {
   changePassword,
   toggleWishlist,
   googleTokenLogin,
+  forgotPassword, resetPassword,              
 } = authController;
+// server/routes/authRoutes.js — Add Google OAuth + Password Reset routes
+const passport = require('../config/passport');
 
+// Forgot / Reset Password
+router.post('/forgot-password',   forgotPassword);
+router.put('/reset-password/:token', resetPassword);
+
+// Google OAuth
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
+);
+router.get('/google/callback',
+  passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}/login?error=google` }),
+  (req, res) => {
+    const token = req.user.generateJWT();
+    // Redirect to frontend with token in query param
+    res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
+  }
+);
 // Verify each function exists before registering routes
 if (typeof register       !== 'function') console.error('❌ register is not a function');
 if (typeof login          !== 'function') console.error('❌ login is not a function');

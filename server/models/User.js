@@ -128,5 +128,20 @@ userSchema.methods.generatePasswordResetToken = function() {
   this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
   return resetToken;
 };
+// server/models/User.js — Replace the pre-save hook
+// ✅ THE FIX: Don't call next() after an async operation — use promise chaining
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password')) return next();
 
+  const doc = this;
+  bcrypt.genSalt(12)
+    .then(salt => bcrypt.hash(doc.password, salt))
+    .then(hash => {
+      doc.password = hash;
+      next();
+    })
+    .catch(err => next(err));
+  // ❌ WRONG was: async function(next) { ... next(); }
+  // ✅ This non-async version correctly passes next as a callback
+});
 module.exports = mongoose.model('User', userSchema);

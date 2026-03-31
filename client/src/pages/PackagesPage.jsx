@@ -75,14 +75,23 @@ function PackageCard({ pkg, index }) {
         ))}
 
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-dark-border">
-          <div>
+       <div>
             {pkg.pricing?.originalPrice && (
               <p className="text-xs text-slate-600 line-through">{formatPrice(pkg.pricing.originalPrice)}</p>
             )}
             <p className="text-xl font-bold text-white">{formatPrice(pkg.pricing?.perPerson)}</p>
             <p className="text-xs text-slate-500">per person</p>
           </div>
-          <button className="btn-primary text-sm py-2 px-4">View Package</button>
+          {/* OPTIONAL: You can also wrap this button or make it navigate */}
+          <button 
+            className="btn-primary text-sm py-2 px-4"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent double navigation from parent div
+              navigate(`/packages/${identifier}`);
+            }}
+          >
+            View Package
+          </button>
         </div>
       </div>
     </motion.div>
