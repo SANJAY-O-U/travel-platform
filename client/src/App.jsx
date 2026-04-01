@@ -9,11 +9,6 @@ import Navbar      from './components/common/Navbar';
 import Footer      from './components/common/Footer';
 import ScrollToTop from './components/common/ScrollToTop';
 import AboutPage from './pages/AboutPage';
-
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import AuthCallback from './pages/AuthCallbackPage';
-// Lazy pages
 const HomePage           = lazy(() => import('./pages/HomePage'));
 const HotelsPage         = lazy(() => import('./pages/HotelsPage'));
 const HotelDetailPage    = lazy(() => import('./pages/HotelDetailPage'));
@@ -30,6 +25,14 @@ const ContactPage        = lazy(() => import('./pages/ContactPage'));
 const NotFoundPage       = lazy(() => import('./pages/NotFoundPage'));
 const GoogleAuthSuccess  = lazy(() => import('./pages/GoogleAuthSuccess'));
 const AuthCallbackPage   = lazy(() => import('./pages/AuthCallbackPage'));
+const CareersPage          = lazy(() => import('./pages/CareersPage'));
+const PressPage            = lazy(() => import('./pages/PressPage'));
+const HelpCenterPage       = lazy(() => import('./pages/HelpCenterPage'));
+const CancellationPolicyPage = lazy(() => import('./pages/CancellationPolicyPage'));
+const PrivacyPolicyPage    = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage   = lazy(() => import('./pages/TermsOfServicePage'));
+const ForgotPasswordPage   = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage    = lazy(() => import('./pages/ResetPasswordPage'));
 // ── Route Guards ──────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -114,6 +117,12 @@ export default function App() {
           <Route path="/packages/:id" element={<Layout><PackageDetailPage /></Layout>} />
           <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
           <Route path="/about"                element={<Layout><AboutPage /></Layout>} />
+          <Route path="/careers"             element={<Layout><CareersPage /></Layout>} />
+<Route path="/press"               element={<Layout><PressPage /></Layout>} />
+<Route path="/help"                element={<Layout><HelpCenterPage /></Layout>} />
+<Route path="/cancellation-policy" element={<Layout><CancellationPolicyPage /></Layout>} />
+<Route path="/privacy"             element={<Layout><PrivacyPolicyPage /></Layout>} />
+<Route path="/terms"               element={<Layout><TermsOfServicePage /></Layout>} />
 
           // ── Auth ───────────────────────────────────
 <Route

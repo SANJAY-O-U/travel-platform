@@ -27,19 +27,6 @@ export const fetchMyBookings = createAsyncThunk(
     }
   }
 );
-
-export const fetchBookingDetail = createAsyncThunk(
-  'bookings/fetchDetail',
-  async (id, { rejectWithValue }) => {
-    try {
-      const { data } = await api.get(`/bookings/${id}`);
-      return data.booking;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to load booking');
-    }
-  }
-);
-
 export const cancelBooking = createAsyncThunk(
   'bookings/cancel',
   async ({ id, reason }, { rejectWithValue }) => {
@@ -59,7 +46,7 @@ export const fetchAllBookings = createAsyncThunk(
       const { data } = await api.get('/bookings/all', { params });
       return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+  return rejectWithValue(err.response?.data?.message || 'Something went wrong');
     }
   }
 );
@@ -70,12 +57,34 @@ export const fetchBookingStats = createAsyncThunk(
     try {
       const { data } = await api.get('/bookings/stats');
       return data.stats;
+  } catch (err) {
+  return rejectWithValue(err.response?.data?.message || 'Something went wrong');
+}
+  }
+);
+// client/src/store/slices/bookingSlice.js — ADD this thunk:
+export const fetchBookingDetail = createAsyncThunk(
+  'bookings/fetchDetail',
+  async (id, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get(`/bookings/${id}`);
+      return data.booking;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.message);
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch booking');
     }
   }
 );
 
+// ADD to initialState:
+// currentBooking: null,
+
+// ADD to extraReducers:
+// .addCase(fetchBookingDetail.pending,   (state) => { state.loading = true; })
+// .addCase(fetchBookingDetail.fulfilled, (state, action) => {
+//   state.loading        = false;
+//   state.currentBooking = action.payload;
+// })
+// .addCase(fetchBookingDetail.rejected,  (state) => { state.loading = false; })
 const bookingSlice = createSlice({
   name: 'bookings',
   initialState: {
@@ -147,15 +156,19 @@ const bookingSlice = createSlice({
 
     // cancelBooking
     builder
-      .addCase(cancelBooking.fulfilled, (state, action) => {
-        const updated = action.payload.booking;
-        const idx     = state.myBookings.findIndex((b) => b._id === updated._id);
-        if (idx !== -1) state.myBookings[idx] = updated;
-        toast.success('Booking cancelled successfully');
-      })
-      .addCase(cancelBooking.rejected, (state, action) => {
-        toast.error(action.payload || 'Cancellation failed');
-      });
+.addCase(cancelBooking.fulfilled, (state, action) => {
+  const updated = action.payload.booking;
+  // Update in list
+  const idx = state.myBookings.findIndex((b) => b._id === updated._id);
+  if (idx !== -1) state.myBookings[idx] = updated;
+  
+  // Update current detail view if it's the same booking
+  if (state.currentBooking?._id === updated._id) {
+    state.currentBooking = updated;
+  }
+  
+  toast.success('Booking cancelled successfully');
+})
 
     // fetchAllBookings
     builder

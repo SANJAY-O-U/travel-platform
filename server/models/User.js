@@ -1,101 +1,63 @@
-// server/models/User.js
-// ✅ REMOVE the pre-save hook completely
-// We will hash passwords manually everywhere
-
 const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
-const crypto   = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type:      String,
-      required:  [true, 'Please provide your name'],
+      required:  [true, 'Name is required'],
       trim:      true,
       maxlength: [50, 'Name cannot exceed 50 characters'],
     },
     email: {
       type:      String,
-      required:  [true, 'Please provide your email'],
+      required:  [true, 'Email is required'],
       unique:    true,
       lowercase: true,
       trim:      true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email',
-      ],
+      match:     [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
     },
     password: {
-      type:   String,
-      select: false,
-    },
-    googleId: {
-      type:   String,
-      sparse: true,
-    },
-    authProvider: {
-      type:    String,
-      enum:    ['local', 'google'],
-      default: 'local',
+      type:      String,
+      required:  [true, 'Password is required'],
+      minlength: [8, 'Password must be at least 8 characters'],
+      select:    false,
     },
     role: {
       type:    String,
       enum:    ['user', 'admin'],
       default: 'user',
     },
+    phone:       { type: String,  default: '' },
+    nationality: { type: String,  default: '' },
+    dateOfBirth: { type: Date },
     avatar: {
       public_id: String,
-      url:       { type: String, default: '' },
+      url:       String,
     },
-    phone:       { type: String, trim: true },
-    dateOfBirth: Date,
-    nationality: String,
     address: {
       street:  String,
       city:    String,
-      state:   String,
       country: String,
       zipCode: String,
     },
-    wishlist: [
-      { type: mongoose.Schema.Types.ObjectId, ref: 'Hotel' },
-    ],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hotel' }],
     preferences: {
-      budget: {
-        type:    String,
-        enum:    ['budget', 'mid-range', 'luxury', 'ultra-luxury'],
-        default: 'mid-range',
-      },
-      travelStyle: [
-        {
-          type: String,
-          enum: ['adventure','relaxation','cultural','business','family','romantic','solo'],
-        },
-      ],
-      preferredAmenities:    [String],
+      budget:                { type: String, default: 'mid-range' },
+      travelStyle:           [String],
       preferredDestinations: [String],
     },
-    searchHistory: [
-      {
-        query:       String,
-        destination: String,
-        date:        { type: Date, default: Date.now },
-      },
-    ],
     notifications: {
-      email:          { type: Boolean, default: true },
-      bookingUpdates: { type: Boolean, default: true },
-      promotions:     { type: Boolean, default: false },
+      email:     { type: Boolean, default: true  },
+      sms:       { type: Boolean, default: false },
+      marketing: { type: Boolean, default: true  },
     },
-    isActive:               { type: Boolean, default: true },
-    isEmailVerified:        { type: Boolean, default: false },
-    emailVerificationToken: String,
-    emailVerificationExpire:Date,
-    resetPasswordToken:     String,
-    resetPasswordExpire:    Date,
-    lastLogin:              Date,
-    loginCount:             { type: Number, default: 0 },
+    isActive:            { type: Boolean, default: true },
+    lastLogin:           { type: Date },
+    loginCount:          { type: Number, default: 0 },
+    resetPasswordToken:  { type: String },
+    resetPasswordExpire: { type: Date   },
   },
   {
     timestamps: true,
@@ -104,44 +66,41 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// ── Indexes ───────────────────────────────────────────────────
-userSchema.index({ email:    1 }, { unique: true });
-userSchema.index({ googleId: 1 }, { sparse: true });
-userSchema.index({ role:     1 });
+// ══════════════════════════════════════════════════════════════
+// PRE-SAVE HOOK
+// RULES:
+//   1. NOT async — use sync bcrypt methods only
+//   2. NOT an arrow function — needs `this`
+//   3. Always return next() — never just call next()
+// ─── Pre-save hook: hash password ────────────────────────────
+userSchema.pre('save', async function () {
+  // 1. Only hash if password was modified
+  if (!this.isModified('password')) {
+    return; // Returning early in an async hook is the same as calling next()
+  }
 
-// ── NO PRE-SAVE HOOK ──────────────────────────────────────────
-// Passwords are hashed manually in controllers and seeder
-// This prevents double-hashing and "next is not a function" errors
+  try {
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
+  } catch (err) {
+    throw err; // Throwing inside an async hook passes the error to Mongoose
+  }
+});
 
-// ── Instance Methods ──────────────────────────────────────────
+// Compare password
+userSchema.methods.comparePassword = function(candidatePassword) {
+  return bcrypt.compareSync(candidatePassword, this.password);
+};
+
+// Generate JWT
 userSchema.methods.generateJWT = function() {
   return jwt.sign(
     { id: this._id, role: this.role },
-    process.env.JWT_SECRET || 'fallback_secret_change_in_production',
+    process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '30d' }
   );
 };
 
-userSchema.methods.generatePasswordResetToken = function() {
-  const resetToken         = crypto.randomBytes(32).toString('hex');
-  this.resetPasswordToken  = crypto.createHash('sha256').update(resetToken).digest('hex');
-  this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-  return resetToken;
-};
-// server/models/User.js — Replace the pre-save hook
-// ✅ THE FIX: Don't call next() after an async operation — use promise chaining
-userSchema.pre('save', function(next) {
-  if (!this.isModified('password')) return next();
+userSchema.index({ email: 1 });
 
-  const doc = this;
-  bcrypt.genSalt(12)
-    .then(salt => bcrypt.hash(doc.password, salt))
-    .then(hash => {
-      doc.password = hash;
-      next();
-    })
-    .catch(err => next(err));
-  // ❌ WRONG was: async function(next) { ... next(); }
-  // ✅ This non-async version correctly passes next as a callback
-});
 module.exports = mongoose.model('User', userSchema);

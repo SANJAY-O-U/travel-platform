@@ -1,75 +1,141 @@
+// client/src/pages/ForgotPasswordPage.jsx
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mail, ArrowLeft, Send, CheckCircle } from 'lucide-react';
 import api from '../utils/api';
-import toast from 'react-hot-toast';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [email,     setEmail]     = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [sent,      setSent]      = useState(false);
+  const [error,     setError]     = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) return toast.error('Please enter your email');
+    if (!email) { setError('Please enter your email address'); return; }
+    setError('');
     setLoading(true);
     try {
       await api.post('/auth/forgot-password', { email });
       setSent(true);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-bg pt-20">
-      <div className="w-full max-w-md px-6">
-        <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8 text-sm transition-colors">
-          <ArrowLeft size={16} /> Back to Login
-        </Link>
+    <div className="min-h-screen bg-dark-bg flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean to-blue-600 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">T</span>
+            </div>
+            <span className="text-xl font-bold">
+              <span className="text-white">Travel</span>
+              <span className="text-ocean">Platform</span>
+            </span>
+          </Link>
+        </div>
 
-        {sent ? (
-          <div className="glass-card rounded-2xl p-8 text-center border border-emerald-500/20">
-            <CheckCircle size={48} className="text-emerald-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Check your inbox</h2>
-            <p className="text-slate-400 mb-6">
-              We sent a password reset link to <strong className="text-white">{email}</strong>.
-              It expires in 15 minutes.
-            </p>
-            <Link to="/login" className="btn-primary w-full text-center block">
-              Back to Login
-            </Link>
-          </div>
-        ) : (
-          <div className="glass-card rounded-2xl p-8 border border-dark-border">
-            <h1 className="text-2xl font-bold text-white mb-2">Forgot password?</h1>
-            <p className="text-slate-400 mb-6 text-sm">
-              Enter your email and we'll send you a reset link.
-            </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="input-label">Email address</label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="input pl-10"
-                    required
-                  />
+        <div className="bg-dark-card border border-dark-border rounded-2xl p-8">
+          {!sent ? (
+            <>
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-ocean/15 border border-ocean/20 flex items-center justify-center mx-auto mb-4">
+                  <Mail size={24} className="text-ocean" />
                 </div>
+                <h1 className="text-2xl font-bold text-white">Forgot Password?</h1>
+                <p className="text-slate-400 text-sm mt-2">
+                  No worries! Enter your email and we'll send you a reset link.
+                </p>
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full py-3">
-                {loading ? 'Sending...' : 'Send Reset Link'}
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="input-label">Email Address</label>
+                  <div className="relative">
+                    <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="input pl-10"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <><div className="spinner-sm" /> Sending...</>
+                  ) : (
+                    <><Send size={16} /> Send Reset Link</>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors"
+                >
+                  <ArrowLeft size={14} /> Back to Sign In
+                </Link>
+              </div>
+            </>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-5">
+                <CheckCircle size={32} className="text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
+              <p className="text-slate-400 text-sm mb-1">
+                We sent a password reset link to
+              </p>
+              <p className="text-white font-semibold mb-6">{email}</p>
+              <p className="text-slate-500 text-xs mb-6">
+                Didn't receive the email? Check your spam folder or{' '}
+                <button
+                  onClick={() => setSent(false)}
+                  className="text-ocean hover:underline"
+                >
+                  try again
+                </button>
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors"
+              >
+                <ArrowLeft size={14} /> Back to Sign In
+              </Link>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -1,89 +1,142 @@
+// client/src/pages/ResetPasswordPage.jsx
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Lock } from 'lucide-react';
-import { useDispatch } from 'react-redux'; // ADDED
-import { fetchCurrentUser } from '../store/slices/authSlice'; // ADDED
+import { motion } from 'framer-motion';
+import { Lock, Eye, EyeOff, CheckCircle, ArrowLeft } from 'lucide-react';
 import api from '../utils/api';
-import toast from 'react-hot-toast';
 
 export default function ResetPasswordPage() {
-  const { token } = useParams();
-  const navigate = useNavigate();
-  const dispatch = useDispatch(); // ADDED
-  const [pw, setPw] = useState('');
-  const [pw2, setPw2] = useState('');
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { token }   = useParams();
+  const navigate    = useNavigate();
+
+  const [form,      setForm]      = useState({ password: '', confirm: '' });
+  const [showPw,    setShowPw]    = useState(false);
+  const [loading,   setLoading]   = useState(false);
+  const [done,      setDone]      = useState(false);
+  const [error,     setError]     = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (pw !== pw2) return toast.error('Passwords do not match');
-    if (pw.length < 8) return toast.error('Password must be at least 8 characters');
-    
+    if (form.password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (form.password !== form.confirm) { setError('Passwords do not match'); return; }
+    setError('');
     setLoading(true);
     try {
-      const { data } = await api.put(`/auth/reset-password/${token}`, { newPassword: pw });
-      
-      // Store token
-      localStorage.setItem('token', data.token);
-      
-      // ✅ Update Redux state immediately so the app knows we are logged in
-      await dispatch(fetchCurrentUser()); 
-      
-      toast.success('Password reset! You are now logged in.');
-      navigate('/');
+      await api.put(`/auth/reset-password/${token}`, { password: form.password });
+      setDone(true);
+      setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Invalid or expired link');
+      setError(err.response?.data?.message || 'Reset link is invalid or expired. Please request a new one.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-dark-bg pt-20">
-      <div className="w-full max-w-md px-6">
-        <div className="glass-card rounded-2xl p-8">
-          <h1 className="text-2xl font-bold text-white mb-2">Set new password</h1>
-          <p className="text-slate-400 mb-6 text-sm">Must be at least 8 characters.</p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="input-label">New password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type={show ? 'text' : 'password'}
-                  value={pw}
-                  onChange={e => setPw(e.target.value)}
-                  placeholder="••••••••"
-                  className="input pl-10 pr-11"
-                  required
-                />
-              </div>
+    <div className="min-h-screen bg-dark-bg flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-ocean to-blue-600 flex items-center justify-center">
+              <span className="text-white font-bold text-lg">T</span>
             </div>
-            <div>
-              <label className="input-label">Confirm password</label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type={show ? 'text' : 'password'}
-                  value={pw2}
-                  onChange={e => setPw2(e.target.value)}
-                  placeholder="••••••••"
-                  className="input pl-10 pr-11"
-                  required
-                />
-              </div>
-            </div>
-            <button type="button" onClick={() => setShow(!show)}
-              className="text-xs text-ocean hover:underline">
-              {show ? 'Hide' : 'Show'} passwords
-            </button>
-            <button type="submit" disabled={loading} className="btn-primary w-full py-3">
-              {loading ? 'Resetting...' : 'Reset Password'}
-            </button>
-          </form>
+            <span className="text-xl font-bold">
+              <span className="text-white">Travel</span>
+              <span className="text-ocean">Platform</span>
+            </span>
+          </Link>
         </div>
-      </div>
+
+        <div className="bg-dark-card border border-dark-border rounded-2xl p-8">
+          {!done ? (
+            <>
+              <div className="text-center mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-ocean/15 border border-ocean/20 flex items-center justify-center mx-auto mb-4">
+                  <Lock size={24} className="text-ocean" />
+                </div>
+                <h1 className="text-2xl font-bold text-white">Set New Password</h1>
+                <p className="text-slate-400 text-sm mt-2">Must be at least 8 characters</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="input-label">New Password</label>
+                  <div className="relative">
+                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                      placeholder="••••••••"
+                      className="input pl-10 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw(!showPw)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    >
+                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="input-label">Confirm New Password</label>
+                  <div className="relative">
+                    <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={form.confirm}
+                      onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))}
+                      placeholder="••••••••"
+                      className="input pl-10"
+                    />
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn-primary py-3 flex items-center justify-center gap-2"
+                >
+                  {loading ? <><div className="spinner-sm" /> Resetting...</> : 'Reset Password →'}
+                </button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <Link to="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-white text-sm transition-colors">
+                  <ArrowLeft size={14} /> Back to Sign In
+                </Link>
+              </div>
+            </>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-5">
+                <CheckCircle size={32} className="text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Password Reset!</h2>
+              <p className="text-slate-400 text-sm mb-6">
+                Your password has been updated successfully. Redirecting you to login...
+              </p>
+              <Link to="/login" className="btn-primary py-2.5 px-6 inline-flex">Sign In Now →</Link>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

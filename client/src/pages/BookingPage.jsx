@@ -1,7 +1,6 @@
-// client/src/pages/BookingPage.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
-import { motion }   from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ChevronLeft, User, Mail, Phone, CreditCard,
@@ -9,9 +8,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { createBooking } from '../store/slices/bookingSlice';
-import { selectUser }    from '../store/slices/authSlice';
+import { selectUser } from '../store/slices/authSlice';
 import { formatPrice, formatDate, calcNights, calcTotalPrice } from '../utils/helpers';
-import api  from '../utils/api';
+import api from '../utils/api';
 import toast from 'react-hot-toast';
 
 // ── Step Indicator ────────────────────────────────────────────
@@ -62,21 +61,13 @@ const ADDON_OPTIONS = [
 
 // ── Main Component ────────────────────────────────────────────
 export default function BookingPage() {
-  const { type, id } = useParams();
+  // FIXED: Define bookingType and resourceId from useParams
+  const { type: bookingType, id: resourceId } = useParams();
   const location     = useLocation();
   const navigate     = useNavigate();
   const dispatch     = useDispatch();
   const user         = useSelector(selectUser);
-  const handleBookFlight = (flight) => {
-  if (!isAuth) { navigate('/login'); return; }
-  navigate(`/booking/flight/${flight._id}`, {
-    state: {
-      bookingType: 'flight',
-      flight,
-      resourceId: flight._id,
-    },
-  });
-};
+
   // Get data passed from previous page
   const state = location.state || {};
   const {
@@ -116,11 +107,11 @@ export default function BookingPage() {
 
   // Fetch resource if not passed via state
   useEffect(() => {
-    if (!resource && id) {
+    if (!resource && resourceId) {
       const endpoint =
-        type === 'hotel'   ? `/hotels/${id}`   :
-        type === 'flight'  ? `/flights/${id}`  :
-        `/packages/${id}`;
+        bookingType === 'hotel'   ? `/hotels/${resourceId}`   :
+        bookingType === 'flight'  ? `/flights/${resourceId}`  :
+        `/packages/${resourceId}`;
 
       api.get(endpoint)
         .then(({ data }) => {
@@ -131,18 +122,18 @@ export default function BookingPage() {
           toast.error('Could not load booking details');
         });
     }
-  }, [id, type, resource]);
+  }, [resourceId, bookingType, resource]);
 
   // ── Price Calculation ─────────────────────────────────────
   const basePrice = (() => {
-    if (type === 'hotel') {
+    if (bookingType === 'hotel') {
       const ppn = room?.pricePerNight || resource?.priceRange?.min || 0;
       return ppn * nights;
     }
-    if (type === 'flight') {
+    if (bookingType === 'flight') {
       return (resource?.basePrice || 0) * (guestCount.adults || 1);
     }
-    if (type === 'package') {
+    if (bookingType === 'package') {
       return (resource?.pricing?.perPerson || 0) * (guestCount.adults || 1);
     }
     return 0;
@@ -192,49 +183,58 @@ export default function BookingPage() {
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-// client/src/pages/BookingPage.jsx — Fix handleConfirm
-// Replace the entire handleConfirm function:
 
-const handleConfirm = async () => {
-  if (submitting) return;
-  setSubmitting(true);
+  const handleConfirm = async () => {
+    if (submitting) return;
+    setSubmitting(true);
 
-  try {
-    const result = await dispatch(createBooking({
-      bookingType,
-      hotelId:        bookingType === 'hotel'   ? resourceId : undefined,
-      flightId:       bookingType === 'flight'  ? resourceId : undefined,
-      packageId:      bookingType === 'package' ? resourceId : undefined,
-      room,
-      checkIn,
-      checkOut,
-      guests:         guestCount,
-      primaryGuest:   guestInfo,
-      pricing,
-      specialRequests,
-      addOns,
-    }));
+    // FIXED: Define the variables used in the dispatch payload
+    const guestInfo = { ...guestForm };
+    const pricing = {
+      basePrice,
+      taxes,
+      fees,
+      addOnTotal,
+      totalAmount
+    };
+    const addOns = selectedAddOns;
 
-    // ✅ Check thunk result BEFORE navigating
-    if (createBooking.fulfilled.match(result)) {
-      const bookingId = result.payload?.booking?._id;
-      if (bookingId) {
-        navigate(`/booking/confirm/${bookingId}`);
+    try {
+      const result = await dispatch(createBooking({
+        bookingType,
+        hotelId:        bookingType === 'hotel'   ? resourceId : undefined,
+        flightId:       bookingType === 'flight'  ? resourceId : undefined,
+        packageId:      bookingType === 'package' ? resourceId : undefined,
+        room,
+        checkIn,
+        checkOut,
+        guests:         guestCount,
+        primaryGuest:   guestInfo,
+        pricing,
+        specialRequests,
+        addOns,
+      }));
+
+      // ✅ Check thunk result BEFORE navigating
+      if (createBooking.fulfilled.match(result)) {
+        const bookingId = result.payload?.booking?._id || result.payload?._id;
+        if (bookingId) {
+          navigate(`/booking/confirm/${bookingId}`);
+        } else {
+          toast.error('Booking created but ID missing — check your bookings page.');
+          navigate('/dashboard/bookings');
+        }
       } else {
-        toast.error('Booking created but ID missing — check your bookings page.');
-        navigate('/dashboard/bookings');
+        // rejected
+        toast.error(result.payload || 'Booking failed');
       }
-    } else {
-      // rejected
-      toast.error(result.payload || 'Booking failed');
+    } catch (err) {
+      toast.error('Something went wrong. Please try again.');
+      console.error('Booking error:', err);
+    } finally {
+      setSubmitting(false);
     }
-  } catch (err) {
-    toast.error('Something went wrong. Please try again.');
-    console.error('Booking error:', err);
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   // Loading state
   if (!resource) {
@@ -276,276 +276,281 @@ const handleConfirm = async () => {
           {/* ── Left: Form ────────────────────────────────── */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* Step 1: Guest Details */}
-            {step === 1 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
-              >
-                {/* Guest Info */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                    <User size={18} className="text-ocean" />
-                    Primary Guest Information
-                  </h2>
+            <AnimatePresence mode="wait">
+              {/* Step 1: Guest Details */}
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  className="space-y-6"
+                >
+                  {/* Guest Info */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
+                      <User size={18} className="text-ocean" />
+                      Primary Guest Information
+                    </h2>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="input-label">
-                        Full Name <span className="text-red-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="text"
-                          value={guestForm.name}
-                          onChange={(e) => {
-                            setGuestForm({ ...guestForm, name: e.target.value });
-                            setFormError('');
-                          }}
-                          placeholder="John Doe"
-                          className="input pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">
-                        Email <span className="text-red-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="email"
-                          value={guestForm.email}
-                          onChange={(e) => {
-                            setGuestForm({ ...guestForm, email: e.target.value });
-                            setFormError('');
-                          }}
-                          placeholder="john@example.com"
-                          className="input pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">
-                        Phone <span className="text-red-400">*</span>
-                      </label>
-                      <div className="relative">
-                        <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                        <input
-                          type="tel"
-                          value={guestForm.phone}
-                          onChange={(e) => {
-                            setGuestForm({ ...guestForm, phone: e.target.value });
-                            setFormError('');
-                          }}
-                          placeholder="+1 234 567 8900"
-                          className="input pl-10"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="input-label">Nationality</label>
-                      <input
-                        type="text"
-                        value={guestForm.nationality}
-                        onChange={(e) => setGuestForm({ ...guestForm, nationality: e.target.value })}
-                        placeholder="e.g. American"
-                        className="input"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Guest Count */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
-                    <Users size={18} className="text-ocean" />
-                    Number of Guests
-                  </h2>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { key: 'adults',   label: 'Adults',   sub: '12+ years', min: 1 },
-                      { key: 'children', label: 'Children', sub: '2-11 years', min: 0 },
-                      { key: 'infants',  label: 'Infants',  sub: 'Under 2',   min: 0 },
-                    ].map(({ key, label, sub, min }) => (
-                      <div key={key}>
-                        <p className="text-white text-sm font-medium">{label}</p>
-                        <p className="text-slate-500 text-xs mb-2">{sub}</p>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setGuestCount(g => ({ ...g, [key]: Math.max(min, g[key] - 1) }))}
-                            className="w-8 h-8 rounded-lg bg-dark-bg border border-dark-border flex items-center justify-center text-slate-300 hover:border-ocean/40 hover:text-ocean transition-all"
-                          >
-                            −
-                          </button>
-                          <span className="text-white font-semibold w-6 text-center">
-                            {guestCount[key]}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setGuestCount(g => ({ ...g, [key]: g[key] + 1 }))}
-                            className="w-8 h-8 rounded-lg bg-dark-bg border border-dark-border flex items-center justify-center text-slate-300 hover:border-ocean/40 hover:text-ocean transition-all"
-                          >
-                            +
-                          </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="input-label">
+                          Full Name <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <User size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                          <input
+                            type="text"
+                            value={guestForm.name}
+                            onChange={(e) => {
+                              setGuestForm({ ...guestForm, name: e.target.value });
+                              setFormError('');
+                            }}
+                            placeholder="John Doe"
+                            className="input pl-10"
+                            required
+                          />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Add-ons */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-4">
-                    Enhance Your Stay <span className="text-slate-500 text-sm font-normal">(Optional)</span>
-                  </h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    {ADDON_OPTIONS.map((addon) => {
-                      const selected = selectedAddOns.find((a) => a.name === addon.name);
-                      return (
-                        <button
-                          key={addon.name}
-                          type="button"
-                          onClick={() => toggleAddon(addon)}
-                          className={`p-4 rounded-xl border text-left transition-all ${
-                            selected
-                              ? 'border-ocean/40 bg-ocean/10'
-                              : 'border-dark-border hover:border-ocean/30 bg-dark-bg'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-white text-sm font-medium">{addon.name}</span>
-                            {selected && <Check size={14} className="text-ocean" />}
-                          </div>
-                          <span className="text-ocean text-sm font-semibold">
-                            +{formatPrice(addon.price)}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Special Requests */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-3">Special Requests</h2>
-                  <textarea
-                    value={specialRequests}
-                    onChange={(e) => setSpecialRequests(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    placeholder="High floor, connecting rooms, dietary needs, anniversary setup..."
-                    className="input resize-none"
-                  />
-                  <p className="text-xs text-slate-600 mt-1 text-right">
-                    {specialRequests.length}/500
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  className="w-full btn-primary py-3 text-base"
-                >
-                  Continue to Review →
-                </button>
-              </motion.div>
-            )}
-
-            {/* Step 2: Review & Pay */}
-            {step === 2 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
-              >
-                {/* Booking Summary */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-4">Booking Summary</h2>
-                  <div className="space-y-3 text-sm">
-                    {[
-                      { label: 'Guest Name',  val: guestForm.name },
-                      { label: 'Email',       val: guestForm.email },
-                      { label: 'Phone',       val: guestForm.phone },
-                      ...(guestForm.nationality ? [{ label: 'Nationality', val: guestForm.nationality }] : []),
-                      ...(checkIn  ? [{ label: 'Check-in',  val: formatDate(checkIn) }]  : []),
-                      ...(checkOut ? [{ label: 'Check-out', val: formatDate(checkOut) }] : []),
-                      {
-                        label: 'Guests',
-                        val: [
-                          `${guestCount.adults} adult${guestCount.adults > 1 ? 's' : ''}`,
-                          guestCount.children > 0 ? `${guestCount.children} children` : '',
-                          guestCount.infants  > 0 ? `${guestCount.infants} infants`   : '',
-                        ].filter(Boolean).join(', '),
-                      },
-                    ].map(({ label, val }) => (
-                      <div key={label} className="flex justify-between">
-                        <span className="text-slate-400">{label}</span>
-                        <span className="text-white font-medium text-right max-w-[200px] truncate">{val}</span>
+                      <div>
+                        <label className="input-label">
+                          Email <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                          <input
+                            type="email"
+                            value={guestForm.email}
+                            onChange={(e) => {
+                              setGuestForm({ ...guestForm, email: e.target.value });
+                              setFormError('');
+                            }}
+                            placeholder="john@example.com"
+                            className="input pl-10"
+                            required
+                          />
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
 
-                {/* Payment Method */}
-                <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
-                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <CreditCard size={18} className="text-ocean" />
-                    Payment Method
-                  </h2>
-                  <div className="p-4 rounded-xl border border-ocean/30 bg-ocean/5 flex items-center gap-3">
-                    <CreditCard size={20} className="text-ocean" />
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">Demo Mode — No charge</p>
-                      <p className="text-slate-500 text-xs">Booking confirmed instantly for testing</p>
+                      <div>
+                        <label className="input-label">
+                          Phone <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                          <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                          <input
+                            type="tel"
+                            value={guestForm.phone}
+                            onChange={(e) => {
+                              setGuestForm({ ...guestForm, phone: e.target.value });
+                              setFormError('');
+                            }}
+                            placeholder="+1 234 567 8900"
+                            className="input pl-10"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="input-label">Nationality</label>
+                        <input
+                          type="text"
+                          value={guestForm.nationality}
+                          onChange={(e) => setGuestForm({ ...guestForm, nationality: e.target.value })}
+                          placeholder="e.g. American"
+                          className="input"
+                        />
+                      </div>
                     </div>
-                    <Check size={16} className="text-emerald-400" />
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3">
+                  {/* Guest Count */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
+                      <Users size={18} className="text-ocean" />
+                      Number of Guests
+                    </h2>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { key: 'adults',   label: 'Adults',   sub: '12+ years', min: 1 },
+                        { key: 'children', label: 'Children', sub: '2-11 years', min: 0 },
+                        { key: 'infants',  label: 'Infants',  sub: 'Under 2',   min: 0 },
+                      ].map(({ key, label, sub, min }) => (
+                        <div key={key}>
+                          <p className="text-white text-sm font-medium">{label}</p>
+                          <p className="text-slate-500 text-xs mb-2">{sub}</p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setGuestCount(g => ({ ...g, [key]: Math.max(min, g[key] - 1) }))}
+                              className="w-8 h-8 rounded-lg bg-dark-bg border border-dark-border flex items-center justify-center text-slate-300 hover:border-ocean/40 hover:text-ocean transition-all"
+                            >
+                              −
+                            </button>
+                            <span className="text-white font-semibold w-6 text-center">
+                              {guestCount[key]}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setGuestCount(g => ({ ...g, [key]: g[key] + 1 }))}
+                              className="w-8 h-8 rounded-lg bg-dark-bg border border-dark-border flex items-center justify-center text-slate-300 hover:border-ocean/40 hover:text-ocean transition-all"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add-ons */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-4">
+                      Enhance Your Stay <span className="text-slate-500 text-sm font-normal">(Optional)</span>
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      {ADDON_OPTIONS.map((addon) => {
+                        const selected = selectedAddOns.find((a) => a.name === addon.name);
+                        return (
+                          <button
+                            key={addon.name}
+                            type="button"
+                            onClick={() => toggleAddon(addon)}
+                            className={`p-4 rounded-xl border text-left transition-all ${
+                              selected
+                                ? 'border-ocean/40 bg-ocean/10'
+                                : 'border-dark-border hover:border-ocean/30 bg-dark-bg'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-white text-sm font-medium">{addon.name}</span>
+                              {selected && <Check size={14} className="text-ocean" />}
+                            </div>
+                            <span className="text-ocean text-sm font-semibold">
+                              +{formatPrice(addon.price)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Special Requests */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-3">Special Requests</h2>
+                    <textarea
+                      value={specialRequests}
+                      onChange={(e) => setSpecialRequests(e.target.value)}
+                      rows={3}
+                      maxLength={500}
+                      placeholder="High floor, connecting rooms, dietary needs, anniversary setup..."
+                      className="input resize-none"
+                    />
+                    <p className="text-xs text-slate-600 mt-1 text-right">
+                      {specialRequests.length}/500
+                    </p>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => { setStep(1); setFormError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    disabled={submitting}
-                    className="btn-ghost flex-1 py-3 disabled:opacity-50"
+                    onClick={handleContinue}
+                    className="w-full btn-primary py-3 text-base"
                   >
-                    ← Back
+                    Continue to Review →
                   </button>
+                </motion.div>
+              )}
 
-                  {/* ✅ Fixed: type="button" prevents accidental form submit */}
-                  <button
-                    type="button"
-                    onClick={handleConfirm}
-                    disabled={submitting}
-                    className="btn-primary flex-1 py-3 text-base flex items-center justify-center gap-2
-                               disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="spinner w-5 h-5 border-2" />
-                        <span>Confirming...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Confirm Booking</span>
-                        <Check size={16} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
-            )}
+              {/* Step 2: Review & Pay */}
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-6"
+                >
+                  {/* Booking Summary */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-4">Booking Summary</h2>
+                    <div className="space-y-3 text-sm">
+                      {[
+                        { label: 'Guest Name',   val: guestForm.name },
+                        { label: 'Email',       val: guestForm.email },
+                        { label: 'Phone',       val: guestForm.phone },
+                        ...(guestForm.nationality ? [{ label: 'Nationality', val: guestForm.nationality }] : []),
+                        ...(checkIn  ? [{ label: 'Check-in',  val: formatDate(checkIn) }]  : []),
+                        ...(checkOut ? [{ label: 'Check-out', val: formatDate(checkOut) }] : []),
+                        {
+                          label: 'Guests',
+                          val: [
+                            `${guestCount.adults} adult${guestCount.adults > 1 ? 's' : ''}`,
+                            guestCount.children > 0 ? `${guestCount.children} children` : '',
+                            guestCount.infants  > 0 ? `${guestCount.infants} infants`   : '',
+                          ].filter(Boolean).join(', '),
+                        },
+                      ].map(({ label, val }) => (
+                        <div key={label} className="flex justify-between">
+                          <span className="text-slate-400">{label}</span>
+                          <span className="text-white font-medium text-right max-w-[200px] truncate">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="bg-dark-card border border-dark-border rounded-2xl p-6">
+                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                      <CreditCard size={18} className="text-ocean" />
+                      Payment Method
+                    </h2>
+                    <div className="p-4 rounded-xl border border-ocean/30 bg-ocean/5 flex items-center gap-3">
+                      <CreditCard size={20} className="text-ocean" />
+                      <div className="flex-1">
+                        <p className="text-white text-sm font-medium">Demo Mode — No charge</p>
+                        <p className="text-slate-500 text-xs">Booking confirmed instantly for testing</p>
+                      </div>
+                      <Check size={16} className="text-emerald-400" />
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => { setStep(1); setFormError(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      disabled={submitting}
+                      className="btn-ghost flex-1 py-3 disabled:opacity-50"
+                    >
+                      ← Back
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirm}
+                      disabled={submitting}
+                      className="btn-primary flex-1 py-3 text-base flex items-center justify-center gap-2
+                                 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {submitting ? (
+                        <>
+                          <div className="spinner w-5 h-5 border-2" />
+                          <span>Confirming...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Confirm Booking</span>
+                          <Check size={16} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* ── Right: Price Summary ───────────────────────── */}
@@ -609,7 +614,7 @@ const handleConfirm = async () => {
               <div className="space-y-2.5 text-sm mb-5">
                 <div className="flex justify-between text-slate-400">
                   <span>
-                    {type === 'hotel'
+                    {bookingType === 'hotel'
                       ? `${formatPrice(room?.pricePerNight || 0)} × ${nights} night${nights > 1 ? 's' : ''}`
                       : `Base price × ${guestCount.adults} guest${guestCount.adults > 1 ? 's' : ''}`
                     }

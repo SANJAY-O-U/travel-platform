@@ -260,13 +260,14 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="input-label mb-0">Password</label>
-                <button
-                  type="button"
-                  className="text-xs text-ocean hover:text-ocean/80"
-                  onClick={() => toast('Password reset coming soon!')}
-                >
-                  Forgot password?
-                </button>
+            {/* REPLACE the forgot password button with: */}
+<button
+  type="button"
+  onClick={() => navigate('/forgot-password')}
+  className="text-ocean hover:text-ocean/80 text-sm transition-colors"
+>
+  Forgot password?
+</button>
               </div>
               <div className="relative">
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />

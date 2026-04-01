@@ -193,7 +193,10 @@ bookingSchema.index({ createdAt: -1 });
 
 // ─── Pre-save Middleware ─────────────────────────────────────
 // Auto-generate booking reference
-bookingSchema.pre('save', function (next) {
+// ─── Pre-save Middleware ─────────────────────────────────────
+// REMOVED 'next' and added 'async'
+bookingSchema.pre('save', async function () {
+  // Auto-generate booking reference
   if (this.isNew) {
     const timestamp = Date.now().toString(36).toUpperCase();
     const random = Math.random().toString(36).substr(2, 5).toUpperCase();
@@ -203,10 +206,17 @@ bookingSchema.pre('save', function (next) {
   // Calculate nights for hotel bookings
   if (this.bookingType === 'hotel' && this.checkIn && this.checkOut) {
     const msPerDay = 1000 * 60 * 60 * 24;
-    this.nights = Math.ceil((this.checkOut - this.checkIn) / msPerDay);
+    // Ensure dates are actually Date objects
+    const start = new Date(this.checkIn);
+    const end = new Date(this.checkOut);
+    
+    if (end > start) {
+        this.nights = Math.ceil((end - start) / msPerDay);
+    }
   }
 
-  next();
+  // In async hooks, returning is the same as calling next()
+  return; 
 });
 
 // ─── Static Methods ──────────────────────────────────────────
