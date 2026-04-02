@@ -2,16 +2,24 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { MapPin, Clock, Users, Star, Filter, ChevronDown, ArrowRight, Check } from 'lucide-react';
+import { MapPin, Clock, Users, Star, ChevronDown, Check } from 'lucide-react';
 import { fetchPackages } from '../store/slices/packageSlice';
 import { PackageCardSkeleton } from '../components/common/SkeletonCard';
 import { formatPrice } from '../utils/helpers';
 
-const PACKAGE_TYPES = ['Adventure', 'Beach', 'Cultural', 'Family', 'Honeymoon', 'Budget', 'Luxury', 'Wildlife', 'Religious'];
-const DURATIONS = [{ label: 'Up to 3 days', value: 3 }, { label: 'Up to 5 days', value: 5 }, { label: 'Up to 7 days', value: 7 }, { label: '7+ days', value: 999 }];
+// ── Updated to match new seeder packageType enum ──────────────
+const PACKAGE_TYPES = [
+  'Adventure', 'Beach', 'Cultural', 'Family',
+  'Honeymoon', 'Budget', 'Luxury', 'Wildlife',
+  'Wellness',   // ← new seeder has Kerala Wellness package
+  'Pilgrimage',
+];
 
 function PackageCard({ pkg, index }) {
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
+  // ── FIX: use pkg.slug || pkg._id (identifier was undefined before) ──
+  const identifier = pkg.slug || pkg._id;
+
   const discount = pkg.pricing?.originalPrice
     ? Math.round(((pkg.pricing.originalPrice - pkg.pricing.perPerson) / pkg.pricing.originalPrice) * 100)
     : 0;
@@ -22,17 +30,17 @@ function PackageCard({ pkg, index }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06 }}
       className="bg-dark-card border border-dark-border rounded-2xl overflow-hidden hover:border-ocean/30 hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
-      onClick={() => navigate(`/packages/${pkg.slug || pkg._id}`)}
+      onClick={() => navigate(`/packages/${identifier}`)}
     >
       <div className="relative aspect-video overflow-hidden">
         <img
-          src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600'}
+          src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600'}
           alt={pkg.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="absolute top-3 left-3 flex gap-2 flex-wrap">
           {discount > 0 && (
             <span className="badge bg-coral/20 text-coral border border-coral/30 text-xs">-{discount}% OFF</span>
           )}
@@ -58,13 +66,22 @@ function PackageCard({ pkg, index }) {
         <h3 className="text-white font-semibold text-lg mb-2 line-clamp-2 leading-snug group-hover:text-ocean transition-colors">
           {pkg.title}
         </h3>
-        <p className="text-slate-400 text-sm line-clamp-2 mb-4">{pkg.shortDescription || pkg.description?.slice(0, 100)}</p>
+        <p className="text-slate-400 text-sm line-clamp-2 mb-4">
+          {pkg.shortDescription || pkg.description?.slice(0, 100)}
+        </p>
 
         <div className="flex items-center gap-4 text-xs text-slate-500 mb-4">
-          <span className="flex items-center gap-1"><Clock size={12} />{pkg.duration?.days}D/{pkg.duration?.nights}N</span>
-          <span className="flex items-center gap-1"><Users size={12} />{pkg.groupSize?.min}-{pkg.groupSize?.max} people</span>
+          <span className="flex items-center gap-1">
+            <Clock size={12} />{pkg.duration?.days}D/{pkg.duration?.nights}N
+          </span>
+          <span className="flex items-center gap-1">
+            <Users size={12} />{pkg.groupSize?.min}-{pkg.groupSize?.max} people
+          </span>
           {pkg.ratings?.overall > 0 && (
-            <span className="flex items-center gap-1"><Star size={12} className="text-sand" fill="currentColor" />{pkg.ratings.overall.toFixed(1)}</span>
+            <span className="flex items-center gap-1">
+              <Star size={12} className="text-sand" fill="currentColor" />
+              {pkg.ratings.overall.toFixed(1)}
+            </span>
           )}
         </div>
 
@@ -75,18 +92,19 @@ function PackageCard({ pkg, index }) {
         ))}
 
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-dark-border">
-       <div>
+          <div>
             {pkg.pricing?.originalPrice && (
-              <p className="text-xs text-slate-600 line-through">{formatPrice(pkg.pricing.originalPrice)}</p>
+              <p className="text-xs text-slate-600 line-through">
+                {formatPrice(pkg.pricing.originalPrice)}
+              </p>
             )}
             <p className="text-xl font-bold text-white">{formatPrice(pkg.pricing?.perPerson)}</p>
             <p className="text-xs text-slate-500">per person</p>
           </div>
-          {/* OPTIONAL: You can also wrap this button or make it navigate */}
-          <button 
+          <button
             className="btn-primary text-sm py-2 px-4"
             onClick={(e) => {
-              e.stopPropagation(); // Prevent double navigation from parent div
+              e.stopPropagation();
               navigate(`/packages/${identifier}`);
             }}
           >
@@ -106,7 +124,6 @@ export default function PackagesPage() {
     destination: '', packageType: '', minPrice: '', maxPrice: '',
     duration: '', sortBy: 'popular', page: 1, limit: 9,
   });
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => { dispatch(fetchPackages(filters)); }, []);
 
@@ -126,13 +143,14 @@ export default function PackagesPage() {
               Travel <span className="gradient-text">Packages</span>
             </h1>
             <p className="text-slate-400 text-lg max-w-xl mx-auto">
-              Expertly crafted journeys with everything included — flights, hotels, guides & more
+              Expertly crafted journeys across India — flights, hotels, guides & more included
             </p>
           </motion.div>
         </div>
       </div>
 
       <div className="container-custom py-8">
+        {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-8 items-center">
           <input
             type="text"
@@ -189,7 +207,10 @@ export default function PackagesPage() {
                   <div className="text-6xl mb-4">🗺️</div>
                   <h3 className="text-xl font-semibold text-white mb-2">No packages found</h3>
                   <p className="text-slate-400 mb-6">Try a different destination or category</p>
-                  <button onClick={() => applyFilter({ destination: '', packageType: '' })} className="btn-primary">
+                  <button
+                    onClick={() => applyFilter({ destination: '', packageType: '' })}
+                    className="btn-primary"
+                  >
                     Clear Filters
                   </button>
                 </div>
@@ -202,9 +223,15 @@ export default function PackagesPage() {
             {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
               <button
                 key={p}
-                onClick={() => { const u = { ...filters, page: p }; setFilters(u); dispatch(fetchPackages(u)); }}
+                onClick={() => {
+                  const u = { ...filters, page: p };
+                  setFilters(u);
+                  dispatch(fetchPackages(u));
+                }}
                 className={`w-10 h-10 rounded-xl font-medium text-sm transition-all ${
-                  filters.page === p ? 'bg-ocean text-white' : 'bg-dark-card border border-dark-border text-slate-400 hover:border-ocean/40'
+                  filters.page === p
+                    ? 'bg-ocean text-white'
+                    : 'bg-dark-card border border-dark-border text-slate-400 hover:border-ocean/40'
                 }`}
               >
                 {p}

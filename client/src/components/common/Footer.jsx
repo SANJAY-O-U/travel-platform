@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 // client/src/components/common/Footer.jsx
-// Replace FOOTER_LINKS with correct routes:
 
 const FOOTER_LINKS = {
   Explore: [
@@ -15,7 +14,7 @@ const FOOTER_LINKS = {
     { label: 'Destinations', to: '/hotels?view=destinations' },
   ],
   Company: [
-    { label: 'About Us',  to: '/about' },    // ✅ Fixed — separate page
+    { label: 'About Us',  to: '/about' },
     { label: 'Contact',   to: '/contact' },
     { label: 'Careers',   to: '/careers' },
     { label: 'Press',     to: '/press' },
@@ -48,19 +47,19 @@ export default function Footer() {
                 <Globe size={18} className="text-white" />
               </div>
               <span className="text-xl font-bold">
-                <span className="text-white">Travel</span>
-                <span className="gradient-text">Platform</span>
+                <span className="text-white">Bharat</span>
+                <span className="gradient-text">Yatra</span>
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-xs">
-              Your all-in-one travel companion. Book hotels, flights, and curated packages with AI-powered recommendations tailored just for you.
+              India's premier travel companion. Book hotels, flights, and curated packages across incredible India with AI-powered recommendations tailored just for you.
             </p>
             {/* Contact info */}
             <div className="space-y-2">
               {[
-                { icon: Mail,    text: 'support@travelplatform.com' },
-                { icon: Phone,   text: '+1 (888) 123-4567' },
-                { icon: MapPin,  text: 'San Francisco, CA, USA' },
+                { icon: Mail,    text: 'support@bharatyatra.in' },
+                { icon: Phone,   text: '+91 98765 43210' },
+                { icon: MapPin,  text: 'Bandra Kurla Complex, Mumbai 400051' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-2.5 text-sm text-slate-400">
                   <Icon size={14} className="text-ocean shrink-0" />
@@ -95,7 +94,7 @@ export default function Footer() {
       <div className="border-t border-dark-border">
         <div className="container-custom py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} TravelPlatform. All rights reserved.
+            © {new Date().getFullYear()} BharatYatra Pvt. Ltd. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             {SOCIAL.map(({ icon: Icon, href, label }) => (

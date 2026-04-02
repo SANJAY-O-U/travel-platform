@@ -65,7 +65,7 @@ export default function HotelCard({ hotel, index = 0, compact = false }) {
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
-              e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600';
+              e.target.src = 'https://images.unsplash.com/photo-1586611292717-f828b167408c?w=600';
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

@@ -7,15 +7,16 @@ import {
   Wifi, Utensils, ChevronDown, Search, TrendingUp,
 } from 'lucide-react';
 import { searchFlights, fetchPopularRoutes } from '../store/slices/flightSlice';
+import { selectIsAuthenticated } from '../store/slices/authSlice';
 import { FlightCardSkeleton } from '../components/common/SkeletonCard';
 import { formatPrice } from '../utils/helpers';
 
 function FlightCard({ flight, onBook }) {
-  const dep = new Date(flight.departureTime);
-  const arr = new Date(flight.arrivalTime);
-  const depTime = dep.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const arrTime = arr.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const durationStr = `${flight.duration?.hours}h ${flight.duration?.minutes || 0}m`;
+  const dep     = new Date(flight.departureTime);
+  const arr     = new Date(flight.arrivalTime);
+  const depTime = dep.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const arrTime = arr.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const durationStr = `${flight.duration?.hours || 0}h ${flight.duration?.minutes || 0}m`;
 
   return (
     <motion.div
@@ -52,7 +53,9 @@ function FlightCard({ flight, onBook }) {
               <Plane size={16} className="text-ocean" />
               <div className="h-px flex-1 bg-gradient-to-r from-ocean/60 to-transparent" />
             </div>
-            <p className="text-slate-500 text-xs">{flight.stops === 0 ? 'Direct' : `${flight.stops} stop`}</p>
+            <p className="text-slate-500 text-xs">
+              {flight.stops === 0 ? 'Direct' : `${flight.stops} stop`}
+            </p>
           </div>
 
           <div className="text-center min-w-[70px]">
@@ -73,7 +76,9 @@ function FlightCard({ flight, onBook }) {
               <span className="flex items-center gap-1 text-emerald-400"><Wifi size={12} />WiFi</span>
             )}
             {flight.meals !== 'Not Included' && (
-              <span className="flex items-center gap-1 text-emerald-400"><Utensils size={12} />{flight.meals}</span>
+              <span className="flex items-center gap-1 text-emerald-400">
+                <Utensils size={12} />{flight.meals}
+              </span>
             )}
           </div>
         </div>
@@ -98,6 +103,8 @@ function FlightCard({ flight, onBook }) {
 export default function FlightsPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  // ── FIX: was using isAuth without importing/defining it ──
+  const isAuth  = useSelector(selectIsAuthenticated);
   const { list: flights, loading, popularRoutes } = useSelector(s => s.flights);
 
   const [params, setParams] = useState({
@@ -109,25 +116,26 @@ export default function FlightsPage() {
   useEffect(() => { dispatch(fetchPopularRoutes()); }, [dispatch]);
 
   const handleSearch = () => {
+    if (!params.from && !params.to) return;
     setHasSearched(true);
     dispatch(searchFlights(params));
   };
 
+  // ── FIX: single handleBook function (removed duplicate handleBookFlight) ──
   const handleBook = (flight) => {
-    navigate(`/booking/flight/${flight._id}`, { state: { flight, passengers: params.passengers } });
+    if (!isAuth) { navigate('/login'); return; }
+    navigate(`/booking/flight/${flight._id}`, {
+      state: {
+        bookingType: 'flight',
+        flight,
+        resourceId:  flight._id,
+        passengers:  params.passengers,
+      },
+    });
   };
-  const handleBookFlight = (flight) => {
-  if (!isAuth) { navigate('/login'); return; }
-  navigate(`/booking/flight/${flight._id}`, {
-    state: {
-      bookingType: 'flight',
-      flight,
-      resourceId: flight._id,
-    },
-  });
-};
+
   const handleRouteClick = (route) => {
-    const updated = { ...params, from: route._id.from, to: route._id.to };
+    const updated = { ...params, from: route._id?.from || '', to: route._id?.to || '' };
     setParams(updated);
     setHasSearched(true);
     dispatch(searchFlights(updated));
@@ -142,7 +150,7 @@ export default function FlightsPage() {
             <h1 className="text-4xl font-bold text-white mb-2">
               Find <span className="gradient-text">Flights</span>
             </h1>
-            <p className="text-slate-400">Search hundreds of airlines for the best deals</p>
+            <p className="text-slate-400">Search Indian domestic & international flights for the best deals</p>
           </motion.div>
 
           <motion.div
@@ -158,7 +166,7 @@ export default function FlightsPage() {
                   <Plane size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ocean" />
                   <input
                     type="text"
-                    placeholder="City or airport"
+                    placeholder="City or airport (e.g. Mumbai)"
                     value={params.from}
                     onChange={(e) => setParams({ ...params, from: e.target.value })}
                     className="input pl-9 py-2.5"
@@ -172,7 +180,7 @@ export default function FlightsPage() {
                   <Plane size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ocean rotate-90" />
                   <input
                     type="text"
-                    placeholder="City or airport"
+                    placeholder="City or airport (e.g. Delhi)"
                     value={params.to}
                     onChange={(e) => setParams({ ...params, to: e.target.value })}
                     className="input pl-9 py-2.5"
@@ -228,7 +236,10 @@ export default function FlightsPage() {
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
-              <button onClick={handleSearch} className="btn-primary ml-auto flex items-center gap-2 px-6 py-2.5">
+              <button
+                onClick={handleSearch}
+                className="btn-primary ml-auto flex items-center gap-2 px-6 py-2.5"
+              >
                 <Search size={16} /> Search Flights
               </button>
             </div>
@@ -237,10 +248,11 @@ export default function FlightsPage() {
       </div>
 
       <div className="container-custom py-8">
-        {!hasSearched && popularRoutes.length > 0 && (
+        {/* Popular Routes */}
+        {!hasSearched && popularRoutes?.length > 0 && (
           <div className="mb-10">
             <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-              <TrendingUp size={18} className="text-ocean" /> Popular Routes
+              <TrendingUp size={18} className="text-ocean" /> Popular Indian Routes
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {popularRoutes.slice(0, 8).map((route, i) => (
@@ -265,23 +277,32 @@ export default function FlightsPage() {
           </div>
         )}
 
+        {/* Search Results */}
         {hasSearched && (
           <div>
             <p className="text-slate-400 text-sm mb-6">
               {loading ? 'Searching flights...' : (
-                <><span className="text-white font-semibold">{flights.length}</span> flights found</>
+                <><span className="text-white font-semibold">{flights?.length || 0}</span> flights found</>
               )}
             </p>
             <div className="space-y-4">
               {loading
                 ? Array.from({ length: 4 }, (_, i) => <FlightCardSkeleton key={i} />)
-                : flights.length > 0
-                  ? flights.map((f, i) => <FlightCard key={f._id} flight={f} onBook={handleBook} />)
+                : flights?.length > 0
+                  ? flights.map((f) => (
+                      <FlightCard key={f._id} flight={f} onBook={handleBook} />
+                    ))
                   : (
                     <div className="py-20 text-center">
                       <div className="text-6xl mb-4">✈️</div>
                       <h3 className="text-xl font-semibold text-white mb-2">No flights found</h3>
-                      <p className="text-slate-400">Try different dates or destinations</p>
+                      <p className="text-slate-400 mb-4">Try different dates, cities, or leave destination blank to see all flights</p>
+                      <button
+                        onClick={() => { setParams(p => ({ ...p, from: '', to: '', date: '' })); dispatch(searchFlights({})); }}
+                        className="btn-primary text-sm"
+                      >
+                        Show All Flights
+                      </button>
                     </div>
                   )
               }

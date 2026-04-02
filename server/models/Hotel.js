@@ -2,17 +2,19 @@
 const mongoose = require('mongoose');
 
 const roomSchema = new mongoose.Schema({
+  // No enum on roomType — seeder uses creative names
+  // (Wonderful, Fabulous Suite, Heritage Villa, etc.)
   roomType: {
     type:     String,
     required: true,
-    enum:     ['Standard', 'Deluxe', 'Suite', 'Executive', 'Presidential', 'Family', 'Studio'],
+    trim:     true,
   },
-  roomNumber:   String,
-  description:  String,
-  pricePerNight:{
-    type: Number,
+  roomNumber:    String,
+  description:   String,
+  pricePerNight: {
+    type:     Number,
     required: true,
-    min: [0, 'Price cannot be negative'],
+    min:      [0, 'Price cannot be negative'],
   },
   maxGuests: {
     type:     Number,
@@ -23,11 +25,11 @@ const roomSchema = new mongoose.Schema({
     type: String,
     enum: ['Single', 'Double', 'Queen', 'King', 'Twin', 'Bunk'],
   },
-  size:       Number,
-  amenities:  [String],
-  images:     [{ public_id: String, url: String }],
-  isAvailable:{ type: Boolean, default: true },
-  totalRooms: { type: Number,  default: 1 },
+  size:        Number,
+  amenities:   [String],
+  images:      [{ public_id: String, url: String }],
+  isAvailable: { type: Boolean, default: true },
+  totalRooms:  { type: Number,  default: 1 },
 });
 
 const hotelSchema = new mongoose.Schema(
@@ -38,8 +40,6 @@ const hotelSchema = new mongoose.Schema(
       trim:      true,
       maxlength: [100, 'Hotel name cannot exceed 100 characters'],
     },
-    // ✅ Fixed: removed duplicate index definition
-    // sparse:true allows multiple documents to have no slug
     slug: {
       type:      String,
       lowercase: true,
@@ -58,8 +58,18 @@ const hotelSchema = new mongoose.Schema(
       type:     String,
       required: true,
       enum: [
-        'Hotel', 'Resort', 'Villa', 'Apartment',
-        'Hostel', 'Boutique Hotel', 'Lodge', 'Guesthouse',
+        'Hotel',
+        'Resort',
+        'Villa',
+        'Apartment',
+        'Hostel',
+        'Boutique Hotel',
+        'Lodge',
+        'Guesthouse',
+        'Heritage Hotel',
+        'Eco Lodge',
+        'Homestay',
+        'Palace Hotel',
       ],
     },
     starRating: {
@@ -78,9 +88,7 @@ const hotelSchema = new mongoose.Schema(
         type:        { type: String, enum: ['Point'], default: 'Point' },
         coordinates: { type: [Number], default: [0, 0] },
       },
-      nearbyAttractions: [
-        { name: String, distance: String, type: String },
-      ],
+      nearbyAttractions: [String],
     },
     images: [
       {
@@ -110,8 +118,8 @@ const hotelSchema = new mongoose.Schema(
     },
     reviewCount: { type: Number, default: 0 },
     policies: {
-      checkIn:    { type: String, default: '3:00 PM' },
-      checkOut:   { type: String, default: '11:00 AM' },
+      checkIn:  { type: String, default: '3:00 PM' },
+      checkOut: { type: String, default: '11:00 AM' },
       cancellation: {
         type:    String,
         enum:    ['Free', 'Flexible', 'Moderate', 'Strict', 'Non-Refundable'],
@@ -146,25 +154,22 @@ const hotelSchema = new mongoose.Schema(
   }
 );
 
-// ── Indexes ─────────────────────────────────────────────────────
-// ✅ Fixed: only ONE index definition per field
+// ── Indexes ───────────────────────────────────────────────────
 hotelSchema.index({ 'location.coordinates': '2dsphere' });
 hotelSchema.index({ 'location.city': 1, 'ratings.overall': -1 });
 hotelSchema.index({ slug: 1 }, { unique: true, sparse: true });
 hotelSchema.index({ isFeatured: 1, isActive: 1 });
 hotelSchema.index({ name: 'text', 'location.city': 'text', tags: 'text' });
 
-// ── Virtual ──────────────────────────────────────────────────────
+// ── Virtual ───────────────────────────────────────────────────
 hotelSchema.virtual('reviews', {
-  ref:          'Review',
-  localField:   '_id',
-  foreignField: 'hotel',
+  ref:         'Review',
+  localField:  '_id',
+  foreignField:'hotel',
 });
 
-// ── Pre-save ─────────────────────────────────────────────────────
-// ✅ Fixed: regular function not arrow function
-hotelSchema.pre('save', function (next) {
-  // Auto-generate slug only if no slug set
+// ── Pre-save ──────────────────────────────────────────────────
+hotelSchema.pre('save', function(next) {
   if (this.isModified('name') && !this.slug) {
     this.slug =
       this.name
@@ -173,26 +178,19 @@ hotelSchema.pre('save', function (next) {
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim() +
-      '-' +
-      Date.now();
+      '-' + Date.now();
   }
-
-  // Auto-calculate price range from rooms
   if (this.rooms && this.rooms.length > 0) {
-    const prices     = this.rooms.map((r) => r.pricePerNight).filter(Boolean);
+    const prices = this.rooms.map(r => r.pricePerNight).filter(Boolean);
     if (prices.length > 0) {
-      this.priceRange = {
-        min: Math.min(...prices),
-        max: Math.max(...prices),
-      };
+      this.priceRange = { min: Math.min(...prices), max: Math.max(...prices) };
     }
   }
-
-  next();
+  return next();
 });
 
-// ── Static: Search Hotels ────────────────────────────────────────
-hotelSchema.statics.searchHotels = async function (filters) {
+// ── Static: Search Hotels ─────────────────────────────────────
+hotelSchema.statics.searchHotels = async function(filters) {
   const {
     city, minPrice, maxPrice, starRating,
     propertyType, amenities, sortBy,
@@ -215,16 +213,14 @@ hotelSchema.statics.searchHotels = async function (filters) {
     if (maxPrice) query['priceRange.min'].$lte = Number(maxPrice);
   }
 
-  if (starRating)   query.starRating    = { $gte: Number(starRating) };
-  if (propertyType) query.propertyType  = propertyType;
+  if (starRating)   query.starRating   = { $gte: Number(starRating) };
+  if (propertyType) query.propertyType = propertyType;
 
   if (amenities) {
-    const amenityList = Array.isArray(amenities)
+    const list = Array.isArray(amenities)
       ? amenities
-      : amenities.split(',').map((a) => a.trim());
-    if (amenityList.length > 0) {
-      query['amenities.general'] = { $all: amenityList };
-    }
+      : amenities.split(',').map(a => a.trim());
+    if (list.length > 0) query['amenities.general'] = { $all: list };
   }
 
   let sort = {};
@@ -237,13 +233,8 @@ hotelSchema.statics.searchHotels = async function (filters) {
   }
 
   const skip = (Number(page) - 1) * Number(limit);
-
   const [hotels, total] = await Promise.all([
-    this.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(Number(limit))
-      .select('-rooms -__v'),
+    this.find(query).sort(sort).skip(skip).limit(Number(limit)).select('-rooms -__v'),
     this.countDocuments(query),
   ]);
 

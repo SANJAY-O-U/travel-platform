@@ -5,6 +5,7 @@ const {
   register,
   login,
   adminLogin,
+  googleLogin,
   getMe,
   updateProfile,
   changePassword,
@@ -25,5 +26,5 @@ router.post('/wishlist/:hotelId', protect, toggleWishlist);
 // Password reset (no auth required)
 router.post('/forgot-password',        forgotPassword);
 router.put('/reset-password/:token',   resetPassword);
-
+router.post('/google/token', googleLogin);
 module.exports = router;

@@ -29,8 +29,8 @@ const userSchema = new mongoose.Schema(
       enum:    ['user', 'admin'],
       default: 'user',
     },
-    phone:       { type: String,  default: '' },
-    nationality: { type: String,  default: '' },
+    phone:       { type: String, default: '' },
+    nationality: { type: String, default: '' },
     dateOfBirth: { type: Date },
     avatar: {
       public_id: String,
@@ -53,11 +53,18 @@ const userSchema = new mongoose.Schema(
       sms:       { type: Boolean, default: false },
       marketing: { type: Boolean, default: true  },
     },
+    // Required by seeder
+    isEmailVerified: { type: Boolean, default: false },
+    authProvider: {
+      type:    String,
+      default: 'local',
+      enum:    ['local', 'google', 'facebook'],
+    },
     isActive:            { type: Boolean, default: true },
     lastLogin:           { type: Date },
     loginCount:          { type: Number, default: 0 },
     resetPasswordToken:  { type: String },
-    resetPasswordExpire: { type: Date   },
+    resetPasswordExpire: { type: Date },
   },
   {
     timestamps: true,
@@ -67,32 +74,23 @@ const userSchema = new mongoose.Schema(
 );
 
 // ══════════════════════════════════════════════════════════════
-// PRE-SAVE HOOK
-// RULES:
-//   1. NOT async — use sync bcrypt methods only
-//   2. NOT an arrow function — needs `this`
-//   3. Always return next() — never just call next()
-// ─── Pre-save hook: hash password ────────────────────────────
-userSchema.pre('save', async function () {
-  // 1. Only hash if password was modified
-  if (!this.isModified('password')) {
-    return; // Returning early in an async hook is the same as calling next()
-  }
-
+// PRE-SAVE HOOK — SYNC, NOT ASYNC, NOT ARROW FUNCTION
+// ══════════════════════════════════════════════════════════════
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password')) return next();
   try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = bcrypt.hashSync(this.password, 12);
+    return next();
   } catch (err) {
-    throw err; // Throwing inside an async hook passes the error to Mongoose
+    return next(err);
   }
 });
 
-// Compare password
+// ── Instance Methods ──────────────────────────────────────────
 userSchema.methods.comparePassword = function(candidatePassword) {
   return bcrypt.compareSync(candidatePassword, this.password);
 };
 
-// Generate JWT
 userSchema.methods.generateJWT = function() {
   return jwt.sign(
     { id: this._id, role: this.role },
@@ -101,6 +99,8 @@ userSchema.methods.generateJWT = function() {
   );
 };
 
+// ── Indexes ───────────────────────────────────────────────────
 userSchema.index({ email: 1 });
+userSchema.index({ role: 1 });
 
 module.exports = mongoose.model('User', userSchema);

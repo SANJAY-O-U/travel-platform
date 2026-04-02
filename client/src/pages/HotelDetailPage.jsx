@@ -21,7 +21,7 @@ import {
 import StarRating from '../components/common/StarRating';
 import api        from '../utils/api';
 import toast      from 'react-hot-toast';
-
+import LocationMap from '../components/common/Map';
 // ── Image Gallery Modal ───────────────────────────────────────
 function GalleryModal({ images, startIdx, onClose }) {
   const [current, setCurrent] = useState(startIdx);
@@ -74,7 +74,7 @@ function GalleryModal({ images, startIdx, onClose }) {
           alt={`Gallery ${current + 1}`}
           className="w-full h-full object-contain rounded-2xl"
           onError={(e) => {
-            e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
+            e.target.src = 'https://images.unsplash.com/photo-1586611292717-f828b167408c?w=800';
           }}
         />
         <p className="text-center text-slate-400 text-sm mt-3">
@@ -98,12 +98,12 @@ function RoomCard({ room, nights, onBook }) {
             <img
               src={
                 room.images?.[0]?.url ||
-                'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400'
+                'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400'
               }
               alt={room.roomType}
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.src = 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400';
+                e.target.src = 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400';
               }}
             />
           </div>
@@ -337,7 +337,7 @@ export default function HotelDetailPage() {
 
   if (allImages.length === 0) {
     allImages.push({
-      url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+      url: 'https://images.unsplash.com/photo-1586611292717-f828b167408c?w=800',
     });
   }
 
@@ -390,7 +390,7 @@ export default function HotelDetailPage() {
                 alt={`${hotel.name} ${i + 1}`}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                 onError={(e) => {
-                  e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800';
+                  e.target.src = 'https://images.unsplash.com/photo-1586611292717-f828b167408c?w=800';
                 }}
               />
               {i === 4 && allImages.length > 5 && (
@@ -588,7 +588,17 @@ export default function HotelDetailPage() {
                 ))}
               </div>
             </div>
-
+            {hotel.location?.coordinates?.coordinates?.length === 2 && (
+  <div>
+    <h2 className="text-xl font-semibold text-white mb-4">Location</h2>
+    <LocationMap
+      lat={hotel.location.coordinates.coordinates[1]}
+      lng={hotel.location.coordinates.coordinates[0]}
+      name={hotel.name}
+      address={`${hotel.location.address}, ${hotel.location.city}, ${hotel.location.state}, ${hotel.location.country}`}
+    />
+  </div>
+)}
             {/* Reviews */}
             <div>
               <h2 className="text-xl font-semibold text-white mb-4">

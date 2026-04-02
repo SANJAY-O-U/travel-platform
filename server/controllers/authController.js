@@ -151,6 +151,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
       port:   Number(process.env.EMAIL_PORT) || 587,
       secure: false,
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+      tls: {
+    rejectUnauthorized: false // This bypasses local certificate issues
+  }
     });
     await transporter.sendMail({
       from:    `"TravelPlatform" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
@@ -177,7 +180,53 @@ const forgotPassword = asyncHandler(async (req, res) => {
     res.status(500); throw new Error('Email could not be sent. Please try again.');
   }
 });
+// authController.js — REPLACE the googleLogin function
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// REPLACE the entire googleLogin function with:
+const googleLogin = asyncHandler(async (req, res) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    res.status(400);
+    throw new Error('Google ID Token is missing');
+  }
+
+  let payload;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    payload = ticket.getPayload();
+  } catch (err) {
+    res.status(401);
+    throw new Error('Invalid Google token: ' + err.message);
+  }
+
+  const { name, email, picture } = payload;
+
+  let user = await User.findOne({ email: email.toLowerCase() });
+
+  if (!user) {
+    const randomPassword = crypto.randomBytes(20).toString('hex');
+    user = await User.create({
+      name,
+      email:    email.toLowerCase(),
+      password: randomPassword,
+      avatar:   { url: picture },
+    });
+  } else {
+    // ✅ findByIdAndUpdate — does NOT trigger pre-save hook
+    await User.findByIdAndUpdate(user._id, {
+      'avatar.url': picture,
+      lastLogin:    new Date(),
+    });
+  }
+
+  sendToken(user, 200, res, `Welcome, ${user.name}!`);
+});
 // ── Reset Password ────────────────────────────────────────────
 const resetPassword = asyncHandler(async (req, res) => {
   const { password } = req.body;
@@ -207,5 +256,5 @@ const resetPassword = asyncHandler(async (req, res) => {
 module.exports = {
   register, login, adminLogin, getMe,
   updateProfile, changePassword, toggleWishlist,
-  forgotPassword, resetPassword,
+  forgotPassword, resetPassword,googleLogin,
 };

@@ -13,11 +13,11 @@ import HotelCard from '../components/common/HotelCard';
 import { HotelCardSkeleton, PackageCardSkeleton } from '../components/common/SkeletonCard';
 import { formatPrice } from '../utils/helpers';
 
-// ── Hero images ───────────────────────────────────────────────
+// ── Hero images — iconic Indian destinations ──────────────────
 const HERO_IMAGES = [
-  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80',
-  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1600&q=80',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&q=80',
+  'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1600&q=80', // Taj Mahal
+  'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=1600&q=80', // Kerala backwaters
+  'https://images.unsplash.com/photo-1477587458883-47145ed94245?w=1600&q=80', // Jaipur palace
 ];
 
 const SEARCH_TABS = [
@@ -217,7 +217,7 @@ function PackageCard({ pkg, index }) {
     >
       <div className="relative overflow-hidden aspect-video">
         <img
-          src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=600'}
+          src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=600'}
           alt={pkg.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           loading="lazy"
@@ -388,9 +388,9 @@ export default function HomePage() {
             className="flex flex-wrap justify-center gap-8 mt-12"
           >
             {[
-              { value: '50K+', label: 'Hotels Worldwide' },
-              { value: '2M+',  label: 'Happy Travelers' },
-              { value: '180+', label: 'Countries' },
+              { value: '10K+', label: 'Hotels Across India' },
+              { value: '5L+',  label: 'Happy Travellers' },
+              { value: '500+', label: 'Destinations' },
               { value: '4.9★', label: 'Average Rating' },
             ].map(({ value, label }) => (
               <div key={label} className="text-center">
@@ -457,13 +457,13 @@ export default function HomePage() {
                     <img
                       src={
                         dest.coverImage?.url ||
-                        `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400`
+                        `https://images.unsplash.com/photo-1477587458883-47145ed94245?w=400`
                       }
                       alt={dest._id}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       loading="lazy"
                       onError={(e) => {
-                        e.target.src = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400';
+                        e.target.src = 'https://images.unsplash.com/photo-1477587458883-47145ed94245?w=400';
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -566,9 +566,9 @@ export default function HomePage() {
       <section className="py-24 container-custom">
         <div className="text-center mb-14">
           <h2 className="section-title">
-            Why <span className="gradient-text">TravelPlatform</span>?
+            Why <span className="gradient-text">BharatYatra</span>?
           </h2>
-          <p className="section-subtitle">Built for the modern traveler who demands more</p>
+          <p className="section-subtitle">Built for the modern Indian traveller who demands more</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -605,10 +605,10 @@ export default function HomePage() {
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
               Ready for Your Next{' '}
-              <span className="gradient-text">Adventure?</span>
+              <span className="gradient-text">Indian Adventure?</span>
             </h2>
             <p className="text-slate-300 text-lg mb-8 max-w-xl mx-auto">
-              Join 2 million travelers who trust TravelPlatform for unforgettable journeys.
+              Join 5 lakh+ travellers who trust BharatYatra for unforgettable journeys across Incredible India.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

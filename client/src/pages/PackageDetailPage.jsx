@@ -44,7 +44,7 @@ export default function PackageDetailPage() {
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-80 mb-8">
           <img
-            src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200'}
+            src={pkg.coverImage?.url || 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=1200'}
             alt={pkg.title}
             className="w-full h-full object-cover"
           />

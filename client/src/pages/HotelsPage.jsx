@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   SlidersHorizontal, X, ChevronDown, Search,
-  MapPin, Star, DollarSign, Grid2X2, List,
+  MapPin, Star, IndianRupee, Grid2X2, List,
 } from 'lucide-react';
 import { fetchHotels, setFilters, clearFilters } from '../store/slices/hotelSlice';
 import HotelCard from '../components/common/HotelCard';
@@ -51,7 +51,7 @@ function FilterPanel({ filters, onChange, onClear, onClose }) {
 
       {/* Price Range */}
       <div>
-        <label className="input-label flex items-center gap-1.5"><DollarSign size={13} /> Price per night</label>
+        <label className="input-label flex items-center gap-1.5"><IndianRupee size={13} /> Price per night</label>
         <div className="grid grid-cols-2 gap-2 mt-2">
           <input
             type="number"

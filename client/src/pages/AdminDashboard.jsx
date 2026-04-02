@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   LayoutDashboard, Hotel, Plane, Package,
   Users, BookOpen, Settings, LogOut,
-  TrendingUp, DollarSign, Activity, Star,
+  TrendingUp, IndianRupee, Activity, Star,
   ArrowUp, ArrowDown, Eye, Edit, Trash2,
   Plus, Search, ChevronDown, Globe,
 } from 'lucide-react';
@@ -171,7 +171,7 @@ function OverviewTab() {
     <div className="space-y-8">
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue"  value={formatPrice(stats?.totalRevenue)}   icon={DollarSign} color="emerald" change={12} />
+        <StatCard title="Total Revenue"  value={formatPrice(stats?.totalRevenue)}   icon={IndianRupee} color="emerald" change={12} />
         <StatCard title="Total Bookings" value={stats?.totalBookings}               icon={BookOpen}   color="ocean"   change={8} />
         <StatCard title="Registered Users" value={stats?.totalUsers}               icon={Users}      color="coral"   change={15} />
         <StatCard title="Active Hotels"  value={stats?.totalHotels}                icon={Hotel}      color="sand"    change={3} />
