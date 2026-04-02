@@ -406,7 +406,7 @@ PORT=5000
 # ── Database ─────────────────────────────────────
 MONGO_URI=mongodb://localhost:27017/travel-platform
 # For MongoDB Atlas:
-# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/travel-platform
+# MONGO_URI=
 
 # ── JWT Authentication ───────────────────────────
 JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
@@ -426,7 +426,7 @@ EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
-EMAIL_FROM=noreply@travelplatform.com
+EMAIL_FROM=noreply@bharatyatra.com
 
 # ── Stripe Payments ──────────────────────────────
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
