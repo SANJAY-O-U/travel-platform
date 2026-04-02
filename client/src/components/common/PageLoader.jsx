@@ -45,8 +45,8 @@ export default function Footer() {
                 <Globe size={18} className="text-white" />
               </div>
               <span className="text-xl font-bold">
-                <span className="text-white">Travel</span>
-                <span className="gradient-text">Platform</span>
+                <span className="text-white">Bharat</span>
+                <span className="gradient-text">Yatra</span>
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-xs">

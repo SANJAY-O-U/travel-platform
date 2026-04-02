@@ -124,7 +124,7 @@ bookingSchema.index({ createdAt: -1 });
 // ══════════════════════════════════════════════════════════════
 // PRE-SAVE HOOK — SYNC, NOT ASYNC, NOT ARROW FUNCTION
 // ══════════════════════════════════════════════════════════════
-bookingSchema.pre('save', function(next) {
+bookingSchema.pre('save', function() {
   // Auto-generate booking reference for new bookings
   if (this.isNew) {
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -140,8 +140,6 @@ bookingSchema.pre('save', function(next) {
       this.nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
     }
   }
-
-  return next();
 });
 
 // ── Static Methods ────────────────────────────────────────────

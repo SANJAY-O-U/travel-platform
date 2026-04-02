@@ -3,7 +3,7 @@ export default function TermsOfServicePage() {
   const sections = [
     {
       title: '1. Acceptance of Terms',
-      content: 'By accessing or using TravelPlatform, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, please do not use our platform.',
+      content: 'By accessing or using BharatYatra, you agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree to these terms, please do not use our platform.',
     },
     {
       title: '2. Use of the Platform',
@@ -23,11 +23,11 @@ export default function TermsOfServicePage() {
     },
     {
       title: '6. Intellectual Property',
-      content: 'All content on TravelPlatform, including logos, text, images, and software, is owned by or licensed to TravelPlatform Pvt. Ltd. You may not reproduce, distribute, or create derivative works without our express written consent.',
+      content: 'All content on BharatYatra, including logos, text, images, and software, is owned by or licensed to BharatYatra Pvt. Ltd. You may not reproduce, distribute, or create derivative works without our express written consent.',
     },
     {
       title: '7. Limitation of Liability',
-      content: 'TravelPlatform acts as an intermediary between travellers and service providers. We are not liable for the quality of accommodations, flights, or packages provided by third parties. Our total liability to you for any claim shall not exceed the amount paid for the specific booking in question.',
+      content: 'BharatYatra acts as an intermediary between travellers and service providers. We are not liable for the quality of accommodations, flights, or packages provided by third parties. Our total liability to you for any claim shall not exceed the amount paid for the specific booking in question.',
     },
     {
       title: '8. Governing Law',
@@ -39,7 +39,7 @@ export default function TermsOfServicePage() {
     },
     {
       title: '10. Contact',
-      content: 'For questions about these Terms, contact legal@travelplatform.com or TravelPlatform Pvt. Ltd., Bandra Kurla Complex, Mumbai 400 051, India.',
+      content: 'For questions about these Terms, contact legal@bharatyatra.com or BharatYatra Pvt. Ltd., Bandra Kurla Complex, Mumbai 400 051, India.',
     },
   ];
 
@@ -56,7 +56,7 @@ export default function TermsOfServicePage() {
 
       <div className="container-custom py-14 max-w-3xl">
         <p className="text-slate-300 mb-10 leading-relaxed">
-          Please read these Terms of Service carefully before using TravelPlatform. These terms govern your use of our website, mobile applications, and services.
+          Please read these Terms of Service carefully before using BharatYatra. These terms govern your use of our website, mobile applications, and services.
         </p>
 
         <div className="space-y-8">
@@ -69,7 +69,7 @@ export default function TermsOfServicePage() {
         </div>
 
         <div className="mt-12 p-5 bg-dark-card border border-dark-border rounded-2xl text-sm text-slate-400">
-          These Terms constitute the entire agreement between you and TravelPlatform regarding your use of the platform and supersede all prior agreements.
+          These Terms constitute the entire agreement between you and BharatYatra regarding your use of the platform and supersede all prior agreements.
         </div>
       </div>
     </div>

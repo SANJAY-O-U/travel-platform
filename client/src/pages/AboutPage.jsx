@@ -17,7 +17,7 @@ export default function AboutPage() {
       <section className="bg-gradient-to-br from-dark-bg via-dark-card to-dark-bg py-20 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-5xl font-bold text-white mb-4">
-            About <span className="gradient-text">TravelPlatform</span>
+            About <span className="gradient-text">BharatYatra</span>
           </h1>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto">
             We're on a mission to make travel accessible, affordable, and extraordinary for everyone — especially across India's incredible destinations.
@@ -43,10 +43,10 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-bold text-white mb-6">Our Story</h2>
           <p className="text-slate-300 leading-relaxed mb-4">
-            TravelPlatform was founded with one goal: to bring the best of Indian hospitality — from the backwaters of Kerala to the palaces of Rajasthan — onto one seamless platform. We combine AI-powered recommendations with a curated selection of verified hotels, flights, and packages across India and beyond.
+            BharatYatra was founded with one goal: to bring the best of Indian hospitality — from the backwaters of Kerala to the palaces of Rajasthan — onto one seamless platform. We combine AI-powered recommendations with a curated selection of verified hotels, flights, and packages across India and beyond.
           </p>
           <p className="text-slate-300 leading-relaxed mb-8">
-            Whether you're planning a weekend getaway to Goa, a heritage tour through Rajasthan, or a family trip to the Himalayas — TravelPlatform has you covered with the best prices, 24/7 support, and zero booking fees.
+            Whether you're planning a weekend getaway to Goa, a heritage tour through Rajasthan, or a family trip to the Himalayas — BharatYatra has you covered with the best prices, 24/7 support, and zero booking fees.
           </p>
           <Link to="/hotels" className="btn-primary inline-flex">
             Explore Hotels →

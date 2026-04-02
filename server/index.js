@@ -110,7 +110,7 @@ app.get('/api/health', (req, res) => {
   const states = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
   res.status(200).json({
     success:     true,
-    message:     'TravelPlatform API is running!',
+    message:     'BharatYatra API is running!',
     environment: process.env.NODE_ENV || 'development',
     database:    states[mongoose.connection.readyState] || 'unknown',
     timestamp:   new Date().toISOString(),
@@ -212,7 +212,7 @@ const startServer = async () => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('╔══════════════════════════════════════════╗');
-    console.log(`║  🚀 TravelPlatform API                   ║`);
+    console.log(`║  🚀 BharatYatra API                   ║`);
     console.log(`║  Port : ${PORT}                              ║`);
     console.log(`║  Mode : ${(process.env.NODE_ENV || 'development').padEnd(30)}║`);
     console.log('╚══════════════════════════════════════════╝');

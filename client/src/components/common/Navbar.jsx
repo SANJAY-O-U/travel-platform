@@ -80,8 +80,8 @@ export default function Navbar() {
               <Globe size={18} className="text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              <span className="text-white">Travel</span>
-              <span className="gradient-text">Platform</span>
+              <span className="text-white">Bharat</span>
+              <span className="gradient-text">Yatra</span>
             </span>
           </Link>
 

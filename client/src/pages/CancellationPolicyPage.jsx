@@ -93,7 +93,7 @@ export default function CancellationPolicyPage() {
           <h2 className="text-xl font-bold text-white mb-4">How to Cancel a Booking</h2>
           <ol className="space-y-4">
             {[
-              'Log in to your TravelPlatform account',
+              'Log in to your BharatYatra account',
               'Go to Dashboard → My Bookings',
               'Find the booking you wish to cancel',
               'Click the "Cancel" button and confirm',
@@ -115,8 +115,8 @@ export default function CancellationPolicyPage() {
           <p>Refunds are processed to your original payment method. Depending on your bank, it may take an additional 2–5 business days to reflect in your account after we initiate the refund.</p>
           <p>For packages that include flights, the airline's own cancellation policy may apply in addition to ours. Please check the package details page for specific terms.</p>
           <p>In cases of natural disasters, government travel bans, or other force majeure events, we offer full refunds regardless of the above schedule. Contact our support team with documentation.</p>
-          <p>TravelPlatform reserves the right to cancel any booking in cases of pricing errors, fraud, or policy violations. In such cases, a full refund will be issued.</p>
-          <p>For any disputes or questions about your refund, contact us at <a href="mailto:support@travelplatform.com" className="text-ocean hover:underline">support@travelplatform.com</a>.</p>
+          <p>BharatYatra reserves the right to cancel any booking in cases of pricing errors, fraud, or policy violations. In such cases, a full refund will be issued.</p>
+          <p>For any disputes or questions about your refund, contact us at <a href="mailto:support@BharatYatra.com" className="text-ocean hover:underline">support@BharatYatra.com</a>.</p>
         </section>
 
         <p className="text-slate-600 text-xs text-center">Last updated: March 2025</p>

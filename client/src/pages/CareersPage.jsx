@@ -48,7 +48,7 @@ export default function CareersPage() {
       <div className="container-custom py-16 space-y-20">
         {/* Perks */}
         <section>
-          <h2 className="text-2xl font-bold text-white mb-8 text-center">Why TravelPlatform?</h2>
+          <h2 className="text-2xl font-bold text-white mb-8 text-center">Why BharatYatra?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {PERKS.map(({ icon: Icon, title, desc }, i) => (
               <motion.div
@@ -102,7 +102,7 @@ export default function CareersPage() {
             <h3 className="text-white font-semibold mb-2">Don't see a role that fits?</h3>
             <p className="text-slate-400 text-sm mb-4">We're always looking for exceptional talent. Send us your resume.</p>
             <a
-              href="mailto:careers@travelplatform.com"
+              href="mailto:careers@bharatyatra.com"
               className="btn-primary inline-flex items-center gap-2 text-sm py-2.5 px-5">
               Send Open Application →
           </a>

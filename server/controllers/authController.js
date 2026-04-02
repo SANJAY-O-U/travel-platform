@@ -26,7 +26,7 @@ const register = asyncHandler(async (req, res) => {
     password,
     phone: phone || '',
   });
-  sendToken(user, 201, res, `Welcome to TravelPlatform, ${user.name}!`);
+  sendToken(user, 201, res, `Welcome to BharatYatra, ${user.name}!`);
 });
 
 // ── Login ─────────────────────────────────────────────────────
@@ -156,9 +156,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
     });
     await transporter.sendMail({
-      from:    `"TravelPlatform" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from:    `"BharatYatra" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to:      user.email,
-      subject: 'Reset Your TravelPlatform Password',
+      subject: 'Reset Your BharatYatra Password',
       html: `<div style="font-family:sans-serif;padding:32px;">
         <h2 style="color:#0ea5e9;">Reset Your Password</h2>
         <p>Hi ${user.name}, click below to reset your password. Expires in 30 minutes.</p>

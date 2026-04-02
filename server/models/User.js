@@ -76,13 +76,19 @@ const userSchema = new mongoose.Schema(
 // ══════════════════════════════════════════════════════════════
 // PRE-SAVE HOOK — SYNC, NOT ASYNC, NOT ARROW FUNCTION
 // ══════════════════════════════════════════════════════════════
-userSchema.pre('save', function(next) {
-  if (!this.isModified('password')) return next();
+// server/models/User.js
+
+// Change to ASYNC and remove 'next'
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) {
+    return; // This is the new next()
+  }
+
   try {
-    this.password = bcrypt.hashSync(this.password, 12);
-    return next();
+    const salt = await bcrypt.genSalt(12);
+    this.password = await bcrypt.hash(this.password, salt);
   } catch (err) {
-    return next(err);
+    throw err; // Mongoose will catch this as a validation error
   }
 });
 

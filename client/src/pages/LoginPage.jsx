@@ -153,8 +153,8 @@ export default function LoginPage() {
               <Globe size={18} className="text-white" />
             </div>
             <span className="text-xl font-bold">
-              <span className="text-white">Travel</span>
-              <span className="gradient-text">Platform</span>
+              <span className="text-white">Bharat</span>
+              <span className="gradient-text">Yatra</span>
             </span>
           </Link>
 

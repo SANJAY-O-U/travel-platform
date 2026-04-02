@@ -31,7 +31,7 @@ export default function PrivacyPolicyPage() {
     },
     {
       title: '8. Contact Us',
-      content: `For privacy-related queries or to exercise your rights, contact our Data Protection Officer at privacy@travelplatform.com or write to TravelPlatform Pvt. Ltd., Bandra Kurla Complex, Mumbai 400 051, India.`,
+      content: `For privacy-related queries or to exercise your rights, contact our Data Protection Officer at privacy@bharatyatra.com or write to BharatYatra Pvt. Ltd., Bandra Kurla Complex, Mumbai 400 051, India.`,
     },
   ];
 
@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage() {
 
       <div className="container-custom py-14 max-w-3xl">
         <p className="text-slate-300 mb-10 leading-relaxed">
-          TravelPlatform Pvt. Ltd. ("we", "us", or "our") is committed to protecting your privacy. This policy explains what information we collect, how we use it, and the choices you have.
+          BharatYatra Pvt. Ltd. ("we", "us", or "our") is committed to protecting your privacy. This policy explains what information we collect, how we use it, and the choices you have.
         </p>
 
         <div className="space-y-8">
@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <div className="mt-12 p-5 bg-dark-card border border-dark-border rounded-2xl text-sm text-slate-400">
-          By using TravelPlatform, you agree to this Privacy Policy. We may update it periodically and will notify you of material changes via email or a prominent notice on our platform.
+          By using BharatYatra, you agree to this Privacy Policy. We may update it periodically and will notify you of material changes via email or a prominent notice on our platform.
         </div>
       </div>
     </div>

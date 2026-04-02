@@ -48,7 +48,7 @@ export default function RegisterPage() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-ocean to-blue-600 flex-center">
             <Globe size={18} className="text-white" />
           </div>
-          <span className="text-xl font-bold text-white">TravelPlatform</span>
+          <span className="text-xl font-bold text-white">BharatYatra</span>
         </Link>
 
         <div>
@@ -87,8 +87,8 @@ export default function RegisterPage() {
               <Globe size={18} className="text-white" />
             </div>
             <span className="text-xl font-bold">
-              <span className="text-white">Travel</span>
-              <span className="gradient-text">Platform</span>
+              <span className="text-white">Bharat</span>
+              <span className="gradient-text">Yatra</span>
             </span>
           </div>
 

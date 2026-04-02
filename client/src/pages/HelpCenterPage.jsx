@@ -38,7 +38,7 @@ const FAQS = [
   },
   {
     q: 'What happens if my flight is cancelled?',
-    a: 'For flights booked through TravelPlatform, we\'ll notify you immediately and offer a full refund or rebooking. Contact support@travelplatform.com for assistance.',
+    a: 'For flights booked through BharatYatra, we\'ll notify you immediately and offer a full refund or rebooking. Contact support@BharatYatra.com for assistance.',
   },
   {
     q: 'Can I book for someone else?',
@@ -144,7 +144,7 @@ export default function HelpCenterPage() {
        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
   {[
     { icon: MessageSquare, title: 'Live Chat', desc: 'Chat with our support team', action: 'Start Chat', href: '#' },
-    { icon: Mail, title: 'Email Us', desc: 'support@travelplatform.com', action: 'Send Email', href: 'mailto:support@travelplatform.com' },
+    { icon: Mail, title: 'Email Us', desc: 'support@BharatYatra.com', action: 'Send Email', href: 'mailto:support@travelplatform.com' },
     { icon: Phone, title: 'Call Us', desc: '+91 99999 00000 (9AM–9PM IST)', action: 'Call Now', href: 'tel:+919999900000' },
   ].map(({ icon: Icon, title, desc, action, href }) => (
     

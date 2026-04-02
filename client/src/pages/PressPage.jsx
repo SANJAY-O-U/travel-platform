@@ -6,13 +6,13 @@ const PRESS = [
   {
     outlet: 'TechCrunch',
     date: 'March 2025',
-    headline: 'TravelPlatform raises ₹50Cr to disrupt India\'s online travel market',
+    headline: 'BharatYatra raises ₹50Cr to disrupt India\'s online travel market',
     url: '#',
   },
   {
     outlet: 'YourStory',
     date: 'January 2025',
-    headline: 'How TravelPlatform is making luxury travel accessible to every Indian',
+    headline: 'How BharatYatra is making luxury travel accessible to every Indian',
     url: '#',
   },
   {
@@ -24,7 +24,7 @@ const PRESS = [
   {
     outlet: 'Inc42',
     date: 'September 2024',
-    headline: 'TravelPlatform crosses 10,000 bookings in first 90 days',
+    headline: 'BharatYatra crosses 10,000 bookings in first 90 days',
     url: '#',
   },
 ];
@@ -112,10 +112,10 @@ export default function PressPage() {
               For interview requests, fact-checking, or media enquiries, contact our PR team.
             </p>
             <a
-              href="mailto:press@travelplatform.com"
+              href="mailto:press@bharatyatra.com"
               className="flex items-center gap-2 btn-primary text-sm py-2.5 px-5 w-fit">
         
-              <Mail size={15} /> press@travelplatform.com
+              <Mail size={15} /> press@bharatyatra.com
             </a>
           </div>
         </section>

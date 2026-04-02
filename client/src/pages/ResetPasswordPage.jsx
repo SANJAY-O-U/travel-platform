@@ -45,8 +45,8 @@ export default function ResetPasswordPage() {
               <span className="text-white font-bold text-lg">T</span>
             </div>
             <span className="text-xl font-bold">
-              <span className="text-white">Travel</span>
-              <span className="text-ocean">Platform</span>
+              <span className="text-white">Bharat</span>
+              <span className="text-ocean">Yatra</span>
             </span>
           </Link>
         </div>
