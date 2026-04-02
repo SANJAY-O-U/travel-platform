@@ -18,8 +18,8 @@ export default function ContactPage() {
 
   const CONTACT_INFO = [
     { icon: Mail,  title: 'Email Us',    val: 'support@bharatyatra.com',    sub: 'Response within 24 hours' },
-    { icon: Phone, title: 'Call Us',     val: '+1 (888) 123-4567',             sub: 'Mon–Fri, 9am–6pm EST' },
-    { icon: MapPin,title: 'Visit Us',    val: '123 Market St, San Francisco',  sub: 'CA 94105, USA' },
+    { icon: Phone, title: 'Call Us',     val: '+91 98765 43210',             sub: 'Mon–Fri, 9am–6pm EST' },
+    { icon: MapPin,title: 'Visit Us',    val: 'Bandra Kurla Complex, Mumbai 400051',  sub: 'Maharashtra,India' },
     { icon: Clock, title: 'Office Hours',val: 'Mon – Fri: 9AM – 6PM',          sub: 'Weekend: 10AM – 4PM' },
   ];
 
